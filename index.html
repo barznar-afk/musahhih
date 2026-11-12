@@ -187,6 +187,8 @@ small { color: var(--muted); font-size: 13px; }
 .page.tpage.per2 { grid-template: 1fr 1fr / 1fr; }
 .page.tpage.per4 { grid-template: 1fr 1fr / 1fr 1fr; }
 .page.tpage .tcell { display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2%; }
+.page.tpage.nopad .tcell { padding: 0; }
+.page.tpage .tcell svg { width: 100%; height: 100%; display: block; }
 .page.tpage .tcell img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 .page.tpage.per2 .cut.v { display: none; }
 .page.tpage .cut { position: absolute; border: 0 dashed #9a9a9a; }
@@ -210,6 +212,25 @@ small { color: var(--muted); font-size: 13px; }
 .empty.slim { padding: 16px; border: 0; }
 .imp-h { margin: 12px 0 6px; }
 .tbl td select.sel-sm { min-width: 64px; }
+.pe-opts { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 10px; }
+.pe-opts label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }
+.pe-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; grid-column: 1 / -1; }
+.pe-list { display: flex; flex-direction: column; gap: 10px; }
+.qcard { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: #fff; }
+.qhead { display: flex; gap: 8px; align-items: flex-start; }
+.qhead textarea { min-height: 52px; flex: 1; }
+.qnum { min-width: 26px; text-align: center; color: var(--pri); padding-top: 8px; }
+.qbtns { display: flex; flex-direction: column; }
+.qbtns .btn { min-height: 28px; padding: 0 8px; }
+.qchoices { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; margin-top: 8px; margin-inline-start: 34px; }
+.qch { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 10px; padding: 2px 6px; }
+.qch.ok { border-color: var(--ok); background: #f0fdf4; }
+.qch input[type=radio] { width: 20px; height: 20px; min-height: 0; flex: none; accent-color: var(--ok); }
+.qch .lt { font-weight: 700; color: var(--muted); min-width: 16px; text-align: center; }
+.qch input:not([type=radio]) { border: 0; min-height: 36px; padding: 2px 4px; }
+.pe-foot { margin-top: 10px; color: var(--muted); font-size: 14px; }
+.pe-ex { background: #f6f6f2; border-radius: 10px; padding: 8px 12px; font-family: inherit; font-size: 13px; white-space: pre-wrap; margin: 0 0 8px; }
+#keygrid:has(.pe-opts) { display: block; }
 #toasts { position: fixed; bottom: 16px; inset-inline: 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 60; pointer-events: none; }
 .toast { background: #1c2422; color: #fff; padding: 8px 16px; border-radius: 10px; box-shadow: 0 4px 14px #0004; transition: opacity .4s, transform .4s; max-width: 520px; }
 .toast.bad { background: var(--bad); }
@@ -933,6 +954,204 @@ const Sheet = (() => {
 })();
 
 
+// ===== Question paper: questions printed with a bubble beside each choice =====
+// Same A4 frame and corner markers as the built-in sheets (detected by the built-in path).
+const PAPER = (() => {
+  const X0 = 20, X1 = 190, YMAX = 275, R = 2.3, IDR = 2.1, VERR = 2.4;
+  function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function shuffle(arr, r) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  // per version: q[j] = original question index shown at position j; c[j][d] = original choice index shown at position d
+  function perms(p, nV, nC) {
+    const n = p.qs.length, out = [];
+    for (let v = 0; v < nV; v++) {
+      const r = rng((p.seed || 1) * 7919 + v * 104729);
+      const id = [...Array(n).keys()], cid = [...Array(nC).keys()];
+      const q = v > 0 && p.shufQ ? shuffle(id, r) : id;
+      const c = q.map(() => v > 0 && p.shufC ? shuffle(cid, r) : cid.slice());
+      out.push({ q, c });
+    }
+    return out;
+  }
+  // wrap text into lines no wider than w (mm)
+  function wrap(text, w, f, bold, measure) {
+    const words = String(text || '').replace(/\s+/g, ' ').trim().split(' '), lines = [];
+    let cur = '';
+    for (const wd of words) {
+      const t = cur ? cur + ' ' + wd : wd;
+      if (!cur || measure(t, f, bold) <= w) cur = t;
+      else { lines.push(cur); cur = wd; }
+    }
+    if (cur || !lines.length) lines.push(cur);
+    return lines;
+  }
+  // o: {title, subtitle, className, student, useId, nV, ver, nC, labels, verLabels, digits(fn), dir, cols, t (strings), qs (in display order: {t, c:[...]}) }
+  // o.size: 1 = A4, 2 = A5 (2 per A4), 4 = A6 (4 per A4). The frame stays 210x297 units; sizes scale by k so print stays readable.
+  function layout(o, f, measure) {
+    const k = o.size === 4 ? 2 : o.size === 2 ? Math.SQRT2 : 1, kb = Math.min(k, 1.6);
+    const R_ = R * k, IDR_ = IDR * kb, VERR_ = VERR * kb;
+    const rtl = o.dir !== 'ltr', items = [], add = it => items.push(it);
+    const X = x => rtl ? x : 210 - x; // design in RTL coordinates, mirror for LTR
+    const txt = (x, y, s, t, opt = {}) => add(Object.assign({ k: 't', x: X(x), y, s, t, d: rtl ? 'rtl' : 'ltr' }, opt));
+    // header
+    let y = 24 + 5 * k;
+    const tS = 5 * k, title = o.title || '';
+    txt(105, y, measure(title, tS, true) > 168 ? tS * 168 / measure(title, tS, true) : tS, title, { b: 1, a: 'middle' });
+    if (o.subtitle) { y += 5.5 * k; txt(105, y, 3.4 * k, o.subtitle, { a: 'middle', c: '#444' }); }
+    y += 8 * k;
+    const lf = 3.6 * k, nmW = measure(o.t.sName + ':', lf, false);
+    txt(X1, y, lf, o.t.sName + ':');
+    add({ k: 'l', x1: X(X1 - nmW - 2), x2: X(98), y1: y + k, y2: y + k });
+    const nameAt = { x: X(X1 - nmW - 3), y: y - 0.3 * k, s: 4 * k };
+    const clW = measure(o.t.sClass + ':', lf, false);
+    txt(92, y, lf, o.t.sClass + ':');
+    add({ k: 'l', x1: X(92 - clW - 2), x2: X(X0), y1: y + k, y2: y + k });
+    txt(92 - clW - 3, y - 0.3 * k, Math.min(lf, 3.2 * k), o.className || '', { b: 1, tag: 'cls' });
+    y += 5 * k;
+    const L = { r: R_, questions: [], idBubbles: [], idR: IDR_, verBubbles: [], verR: VERR_, T: { rows: 1e9 } };
+    if (o.useId || o.nV > 1) {
+      const top = y, pitch = 5 * kb, boxH = 7.5 * kb + 3 * pitch + IDR_ + 2.5;
+      if (o.useId) {
+        const right = X1 - 1, w = 14 * kb + 9 * pitch + IDR_ * 2;
+        add({ k: 'r', x: X(right + 2), y: top - 1, w, h: boxH, rtlAnchor: rtl });
+        txt(right, top + 3.6 * kb, 3.2 * kb, o.t.sId, { b: 1 });
+        for (let d = 0; d < 4; d++) {
+          const row = [], cy = top + 7.5 * kb + d * pitch;
+          txt(right - 1, cy + kb, 2.6 * kb, o.digits(d + 1), { c: '#777' });
+          for (let v = 0; v < 10; v++) {
+            const cx = right - 7 * kb - v * pitch;
+            row.push({ x: X(cx), y: cy });
+            add({ k: 'c', x: X(cx), y: cy, r: IDR_, f: '#fff', tag: 'id' + d + '_' + v });
+            txt(cx, cy + 0.9 * kb, 2.4 * kb, o.digits(v), { a: 'middle', c: '#b0b0b0', tag: 'idl' + d + '_' + v });
+          }
+          L.idBubbles.push(row);
+        }
+      }
+      if (o.nV > 1) {
+        const w = 46 * kb, cy = top + boxH * 0.5;
+        add({ k: 'r', x: X(X0 + w - 2), y: top - 1, w, h: boxH, rtlAnchor: rtl });
+        txt(X0 + w - 5, top + 3.6 * kb, 3.2 * kb, o.t.sVersion, { b: 1 });
+        txt(X0 + w - 5, top + boxH - 3.5 * kb, 7 * kb, o.verLabels[o.ver], { b: 1, c: '#111' });
+        for (let v = 0; v < o.nV; v++) {
+          const cx = X0 + 3 * kb + (o.nV - 1 - v) * 7.5 * kb;
+          L.verBubbles.push({ x: X(cx), y: cy });
+          const pre = v === o.ver;
+          add({ k: 'c', x: X(cx), y: cy, r: VERR_, f: pre ? '#000' : '#fff' });
+          if (!pre) txt(cx, cy + kb, 2.6 * kb, o.verLabels[v], { a: 'middle', c: '#b0b0b0' });
+        }
+      }
+      y = top + boxH + 1.5;
+    }
+    const iS = 2.8 * k, instr = o.t.sInstrP || o.t.sInstr;
+    txt(105, y + iS * 0.7, measure(instr, iS, false) > 170 ? iS * 170 / measure(instr, iS, false) : iS, instr, { a: 'middle', c: '#555' });
+    const yTop = y + iS + 3 * k;
+    // question blocks
+    const cols = o.cols === 2 ? [[107, X1], [X0, 103]] : [[X0, X1]];
+    const lh = f * 1.42, gap = Math.max(1.8 * k, f * 0.6), numW = Math.max(6 * k, measure(o.digits(o.qs.length) + '.', f, true) + 2 * k);
+    let col = 0, cy = yTop, overflow = false;
+    o.qs.forEach((q, j) => {
+      const [x0, x1] = cols[col], right = x1 - numW, W = right - x0;
+      const stem = wrap(q.t, W, f, false, measure);
+      const cw = q.c.map(c => 2 * R_ + 1.6 * k + Math.max(measure(c, f, false), 2 * k));
+      let kk = 1;
+      for (const cand of [o.nC, o.nC === 4 || o.nC === 5 ? 2 : 0].filter(Boolean)) if (Math.max(...cw) <= W / cand - 2 * k) { kk = cand; break; }
+      const cellW = W / kk;
+      const chLines = q.c.map(c => wrap(c, cellW - 2 * R_ - 2.2 * k, f, false, measure));
+      const rows = Math.ceil(q.c.length / kk), rowH = [];
+      for (let r = 0; r < rows; r++) rowH.push(Math.max(2 * R_ + 1.4 * k, ...chLines.slice(r * kk, r * kk + kk).map(ls => ls.length * lh)));
+      const h = stem.length * lh + rowH.reduce((a, b) => a + b, 0) + gap;
+      if (cy + h > YMAX) { col++; if (col >= cols.length) { overflow = true; col = cols.length - 1; } cy = yTop; }
+      if (overflow) return;
+      const [cx0, cx1] = cols[col], cright = cx1 - numW;
+      let yy = cy + f * 0.95;
+      txt(cx1, yy, f, o.digits(j + 1) + '.', { b: 1 });
+      stem.forEach(line => { txt(cright, yy, f, line); yy += lh; });
+      yy -= lh;
+      const bubbles = [];
+      let rowTop = yy + lh * 0.35;
+      for (let r = 0; r < rows; r++) {
+        for (let i = r * kk; i < Math.min(q.c.length, r * kk + kk); i++) {
+          const cellRight = cright - (i % kk) * ((cright - cx0) / kk);
+          const bx = cellRight - R_ - 0.2 * k, by = rowTop + R_ + 0.5 * k;
+          bubbles.push({ x: X(bx), y: by });
+          add({ k: 'c', x: X(bx), y: by, r: R_, f: '#fff' });
+          txt(bx, by + R_ * 0.42, R_ * 1.15, o.labels[i], { a: 'middle', c: '#9a9a9a' });
+          chLines[i].forEach((ln, li) => txt(cellRight - 2 * R_ - 1.6 * k, by + f * 0.36 + li * lh, f, ln));
+        }
+        rowTop += rowH[r];
+      }
+      L.questions.push({ bubbles });
+      cy += h;
+    });
+    return { items, L, overflow, f, nameAt, rtl, size: o.size || 1, k };
+  }
+  const FONTS = [3.8, 3.6, 3.4, 3.2, 3.0, 2.8];
+  function build(o, measure) {
+    const k = o.size === 4 ? 2 : o.size === 2 ? Math.SQRT2 : 1, F = FONTS.map(f => f * k);
+    const tries = o.cols === 1 ? F.map(f => [1, f]) : o.cols === 2 ? F.map(f => [2, f])
+      : [...F.slice(0, 4).map(f => [1, f]), ...F.map(f => [2, f])];
+    let last = null;
+    for (const [c, f] of tries) { const r = layout(Object.assign({}, o, { cols: c }), f, measure); r.cols = c; last = r; if (!r.overflow) return r; }
+    return last;
+  }
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function svgFor(page, student, className) {
+    let items = page.items;
+    if (student || className != null) {
+      const idStr = student && student.id != null ? String(student.id).padStart(4, '0') : null;
+      items = items.filter(it => !(idStr && it.tag && it.tag.startsWith('idl') && +idStr[+it.tag[3]] === +it.tag.slice(5))).map(it => {
+        if (idStr && it.k === 'c' && it.tag && it.tag.startsWith('id') && +idStr[+it.tag[2]] === +it.tag.slice(4)) return Object.assign({}, it, { f: '#000' });
+        if (it.tag === 'cls' && className != null) return Object.assign({}, it, { t: className });
+        return it;
+      });
+      if (student && student.name && page.nameAt) items = items.concat([{ k: 't', x: page.nameAt.x, y: page.nameAt.y, s: page.nameAt.s || 4, b: 1, t: student.name, d: page.rtl === false ? 'ltr' : 'rtl' }]);
+    }
+    return svg({ items, k: page.k });
+  }
+  function svg(page) {
+    const sw = (page.k || 1);
+    const p = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Naskh', 'Noto Naskh Arabic', serif" style="font-synthesis:none"><rect width="210" height="297" fill="#fff"/>`];
+    for (const [x, y] of OMR.MARKERS) p.push(`<rect x="${x - OMR.MK / 2}" y="${y - OMR.MK / 2}" width="${OMR.MK}" height="${OMR.MK}" fill="#000"/>`);
+    const B = OMR.ORIENT_BAR; p.push(`<rect x="${B.x}" y="${B.y}" width="${B.w}" height="${B.h}" fill="#000"/>`);
+    for (const it of page.items) {
+      if (it.k === 't') p.push(`<text x="${it.x.toFixed(2)}" y="${it.y.toFixed(2)}" font-size="${it.s}"${it.b ? ' font-weight="700"' : ''} direction="${it.d}" text-anchor="${it.a || 'start'}"${it.c ? ` fill="${it.c}"` : ''}>${esc(it.t)}</text>`);
+      else if (it.k === 'c') p.push(`<circle cx="${it.x.toFixed(2)}" cy="${it.y.toFixed(2)}" r="${it.r}" fill="${it.f}" stroke="#555" stroke-width="${(0.25 * sw).toFixed(2)}"/>`);
+      else if (it.k === 'l') p.push(`<line x1="${it.x1.toFixed(2)}" y1="${it.y1}" x2="${it.x2.toFixed(2)}" y2="${it.y2}" stroke="#999" stroke-width="${(0.25 * sw).toFixed(2)}"/>`);
+      else if (it.k === 'r') { const x = it.rtlAnchor ? it.x - it.w : it.x; p.push(`<rect x="${x.toFixed(2)}" y="${it.y}" width="${it.w}" height="${it.h}" rx="1.5" fill="none" stroke="#bbb" stroke-width="${(0.3 * sw).toFixed(2)}"/>`); }
+    }
+    p.push('</svg>'); return p.join('');
+  }
+  // ---- paste parser: "1. question" lines, "أ) choice" lines, * marks the correct choice, or "الجواب: ب"
+  const CH = { 'أ': 0, 'ا': 0, 'آ': 0, 'ب': 1, 'ج': 2, 'د': 3, 'ه': 4, 'هـ': 4, 'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4 };
+  function parse(text) {
+    const qs = []; let cur = null, lastChoice = -1;
+    const toW = s => String(s).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+    const chRe = /(^|\s)(\*?)\s*(هـ|[أاآبجدهabcdeABCDE])\s*[\)\-–\.ـ:]\s+(\*?)/g;
+    for (let raw of String(text).split(/\r?\n/)) {
+      const line = raw.trim(); if (!line) continue;
+      const ans = line.match(/^(?:الجواب|الإجابة|الاجابة|الجواب الصحيح|بەرسڤ|answer|ans|key)\s*[:：\-]?\s*(\*?)\s*(هـ|[أاآبجدهabcdeABCDE]|[0-9])\s*[\)\.]?\s*$/i);
+      if (ans && cur) { const v = /\d/.test(ans[2]) ? +toW(ans[2]) - 1 : CH[ans[2].toLowerCase()]; if (v >= 0) cur.k = v; continue; }
+      const qm = line.match(/^(?:س\s*)?([0-9٠-٩۰-۹]{1,3})\s*[\.\-\)ـ:]\s*(.*)$/);
+      if (qm) { cur = { t: qm[2].trim(), c: [], k: -1 }; qs.push(cur); lastChoice = -1; continue; }
+      if (!cur) { cur = { t: line, c: [], k: -1 }; qs.push(cur); lastChoice = -1; continue; }
+      const marks = [...line.matchAll(chRe)];
+      if (marks.length && marks[0].index === 0) {
+        for (let i = 0; i < marks.length; i++) {
+          const m = marks[i], st = m.index + m[0].length, en = i + 1 < marks.length ? marks[i + 1].index : line.length;
+          let body = line.slice(st, en).trim(), star = !!(m[2] || m[4]);
+          if (/\*$/.test(body)) { star = true; body = body.replace(/\s*\*$/, ''); }
+          const idx = CH[m[3].toLowerCase()];
+          const pos = idx != null && idx === cur.c.length ? idx : cur.c.length;
+          cur.c[pos] = body; if (star) cur.k = pos; lastChoice = pos;
+        }
+        continue;
+      }
+      if (lastChoice >= 0) cur.c[lastChoice] += ' ' + line; else cur.t += ' ' + line;
+    }
+    return qs.filter(q => q.t || q.c.length);
+  }
+  return { build, svg, svgFor, perms, parse, R };
+})();
+
 const I18N = {
   ar: {
     fmt: 'حجم ورقة الإجابة', fmtQuarter: 'ربع صفحة — 4 أوراق في صفحة A4 واحدة (حتى 30 سؤالاً)', fmtFull: 'صفحة A4 كاملة (حتى 100 سؤال)', fmtQuarterShort: '4 في A4', fmtFullShort: 'A4 كاملة',
@@ -961,6 +1180,17 @@ const I18N = {
     importXlsx: 'استيراد الأسماء من Excel', pasteList: 'أو الصق قائمة أسماء', importTitle: 'استيراد الطلاب', sheet: 'الورقة', hasHeader: 'الصف الأول عناوين أعمدة', colName: 'عمود الاسم', colId: 'عمود الرقم', colSec: 'عمود الشعبة',
     autoNum: '— ترقيم تلقائي —', noCol: '— لا يوجد —', targetSec: 'إضافة إلى الشعبة', preview: 'معاينة', importBtn: 'استيراد {n} طالباً', imported: 'أُضيف {n} طالباً', idFixed: '{n} أرقام مكررة أُعطيت أرقاماً جديدة',
     xlsErr: 'تعذّر قراءة الملف. احفظه بصيغة .xlsx أو .csv ثم أعد المحاولة.', xlsOld: 'ملفات .xls القديمة غير مدعومة — افتحه في Excel واختر «حفظ باسم» ← «مصنف Excel (.xlsx)».', xlsEmpty: 'الملف فارغ.',
+    fmtPaper: 'ورقة أسئلة — الأسئلة والخيارات مطبوعة مع الفقاعات', fmtPaperShort: 'ورقة أسئلة', peTitle: 'الأسئلة', peCols: 'الأعمدة', peAuto: 'تلقائي', peDir: 'اتجاه الورقة', peRtl: 'من اليمين (عربي/كردي)', peLtr: 'من اليسار (إنجليزي)',
+    peShufQ: 'خلط ترتيب الأسئلة في النماذج', peShufC: 'خلط ترتيب الخيارات', peReshuf: 'خلط جديد', peReshufDone: 'سيُطبَّق خلط جديد عند الحفظ', peAdd: 'سؤال', pePaste: 'لصق أسئلة', peXls: 'من Excel', pePreview: 'معاينة',
+    peStem: 'نص السؤال', peChoice: 'الخيار', peEmpty: 'لا توجد أسئلة بعد. أضف سؤالاً أو الصق قائمة أسئلة.', peCount: '{n} سؤال', peNoKey: '{n} بلا إجابة صحيحة — اختر الدائرة بجانب الخيار الصحيح',
+    pePasteHelp: 'كل سؤال يبدأ برقم، وكل خيار يبدأ بحرف (أ) ب) ج) د) أو A) B)). ضع * قبل الخيار الصحيح، أو اكتب سطراً «الجواب: ب».',
+    pePasteEx: '1. عاصمة إقليم كوردستان هي:\nأ) دهوك\nب) *أربيل\nج) السليمانية\nد) زاخو\n\n2. ناتج 3 × 4 =\nأ) 7   ب) 12   ج) 34   د) 1\nالجواب: ب',
+    peAppend: 'إضافة إلى الأسئلة', peReplace: 'استبدال كل الأسئلة', peParsed: 'تم التعرف على {n} سؤالاً، منها {k} بإجابة صحيحة', peNone: 'أضف سؤالاً واحداً على الأقل',
+    peOverflow: 'الأسئلة لا تتسع في صفحة واحدة حتى بأصغر خط — اختر عمودين، أو قلّل الأسئلة، أو قسّمها على اختبارين.', peNeedSave: 'احفظ الاختبار أولاً لتجهيز ورقة الأسئلة.',
+    peChangedWarn: 'غيّرت الأسئلة بعد مسح أوراق. الأوراق المطبوعة سابقاً قد لا تُقرأ صحيحاً بعد الحفظ. هل تريد المتابعة؟', printHintP: 'اطبع على A4 بدون تكبير أو تصغير (100%). كل ورقة أسئلة تُمسح كاملة، ويجب أن تظهر المربعات السوداء الأربعة.',
+    sInstrP: 'ظلّل دائرة الإجابة الصحيحة بالكامل بقلم داكن، وامسح الخطأ جيداً — لا تكتب فوق الدوائر',
+    peSize: 'حجم الورقة', peSize1: 'A4 — ورقة في الصفحة', peSize2: 'A5 — ورقتان في الصفحة', peSize4: 'A6 — 4 أوراق في الصفحة',
+    printHintPn: 'اطبع على A4 بدون تكبير أو تصغير (100%)، ثم قصّ الصفحة على الخطوط المتقطعة وامسح كل ورقة وحدها. يجب أن تظهر مربعاتها السوداء الأربعة كاملة.',
     appName: 'مُصحِّح', appSub: 'تصحيح الاختبارات بالكاميرا — يعمل دون إنترنت',
     tabExams: 'الاختبارات', tabClasses: 'الصفوف', tabSettings: 'الإعدادات',
     newExam: 'اختبار جديد', newClass: 'صف جديد', noExams: 'لا توجد اختبارات بعد. أنشئ اختبارك الأول.', noClasses: 'لا توجد صفوف بعد.',
@@ -1024,6 +1254,17 @@ const I18N = {
     importXlsx: 'هاوردەکرنا ناڤان ژ Excel', pasteList: 'یان لیستەکا ناڤان لێبدە', importTitle: 'هاوردەکرنا قوتابیان', sheet: 'پەڕ', hasHeader: 'ڕیزا ئێکێ ناڤونیشانێن ستوونانە', colName: 'ستوونا ناڤی', colId: 'ستوونا ژمارێ', colSec: 'ستوونا هوبێ',
     autoNum: '— ژمارەکرنا خۆکار —', noCol: '— نینە —', targetSec: 'زێدەکرن بۆ هوبا', preview: 'پێشبینین', importBtn: 'هاوردەکرنا {n} قوتابیان', imported: '{n} قوتابی هاتنە زێدەکرن', idFixed: '{n} ژمارێن دووبارە ژمارێن نوو وەرگرتن',
     xlsErr: 'نەشیا فایلێ بخوینیت. ب شێوەیێ .xlsx یان .csv پاشەکەفت بکە و دووبارە هەول بدە.', xlsOld: 'فایلێن .xls یێن کەڤن پشتگیری ناکرن — د Excel دا ڤەکە و «Save As» ← «Excel Workbook (.xlsx)» هەلبژێرە.', xlsEmpty: 'فایل ڤالایە.',
+    fmtPaper: 'پەڕا پسیاران — پسیار و هەلبژارتن دگەل بازنان چاپ دبن', fmtPaperShort: 'پەڕا پسیاران', peTitle: 'پسیار', peCols: 'ستوون', peAuto: 'خۆکار', peDir: 'ئاراستەیا پەڕێ', peRtl: 'ژ ڕاستێ (عەرەبی/کوردی)', peLtr: 'ژ چەپێ (ئینگلیزی)',
+    peShufQ: 'تێکەلکرنا ڕیزبەندیا پسیاران د مۆدێلان دا', peShufC: 'تێکەلکرنا ڕیزبەندیا هەلبژارتنان', peReshuf: 'تێکەلکرنەکا نوو', peReshufDone: 'تێکەلکرنا نوو دەمێ پاشەکەفتکرنێ دێ ئێتە بکارئینان', peAdd: 'پسیار', pePaste: 'لێدانا پسیاران', peXls: 'ژ Excel', pePreview: 'پێشبینین',
+    peStem: 'دەقێ پسیارێ', peChoice: 'هەلبژارتن', peEmpty: 'هێشتا چ پسیار نینن. پسیارەکێ زێدە بکە یان لیستەکا پسیاران لێبدە.', peCount: '{n} پسیار', peNoKey: '{n} بێ بەرسڤا دروست — بازنێ ل تەنشت هەلبژارتنا دروست هەلبژێرە',
+    pePasteHelp: 'هەر پسیارەک ب ژمارەکێ دەست پێ دکەت، و هەر هەلبژارتنەک ب پیتەکێ (أ) ب) ج) د) یان A) B)). * بدانە بەری هەلبژارتنا دروست، یان دێڕەکێ «بەرسڤ: ب» بنڤیسە.',
+    pePasteEx: '1. پایتەختێ هەرێما کوردستانێ:\nأ) دهۆک\nب) *هەولێر\nج) سلێمانی\nد) زاخۆ\n\n2. 3 × 4 =\nأ) 7   ب) 12   ج) 34   د) 1\nبەرسڤ: ب',
+    peAppend: 'زێدەکرن بۆ پسیاران', peReplace: 'گوهۆڕینا هەمی پسیاران', peParsed: '{n} پسیار هاتنە ناسین، ژ وان {k} ب بەرسڤا دروست', peNone: 'کێمتر پسیارەکێ زێدە بکە',
+    peOverflow: 'پسیار د ئێک پەڕێ دا ناگونجن حەتا ب بچووکترین فۆنت — دوو ستوونان هەلبژێرە، یان پسیاران کێم بکە، یان ل سەر دوو تاقیکرنان دابەش بکە.', peNeedSave: 'پێشی تاقیکرنێ پاشەکەفت بکە دا پەڕا پسیاران ئامادە ببیت.',
+    peChangedWarn: 'تە پسیار پشتی سکانکرنا پەڕان گوهۆڕین. پەڕێن بەری نوکە چاپکری بەلکی پشتی پاشەکەفتکرنێ ب دروستی نەئێنە خواندن. دێ بەردەوام بی؟', printHintP: 'ل سەر A4 بێ مەزنکرن و بچووککرن (100%) چاپ بکە. هەر پەڕەکا پسیاران ب تەمامی سکان دبیت، و دڤێت هەر چار چوارگۆشەیێن ڕەش دیار ببن.',
+    sInstrP: 'بازنێ بەرسڤا دروست ب تەمامی ب پێنووسەکا تاری ڕەش بکە، و یا خەلەت باش ژێببە — ل سەر بازنان نەنڤیسە',
+    peSize: 'قەبارێ پەڕێ', peSize1: 'A4 — پەڕەک د پەڕەکێ دا', peSize2: 'A5 — دوو پەڕ د پەڕەکێ دا', peSize4: 'A6 — 4 پەڕ د پەڕەکێ دا',
+    printHintPn: 'ل سەر A4 بێ مەزنکرن و بچووککرن (100%) چاپ بکە، پاشان پەڕێ ل سەر هێلێن پچڕپچڕ ببڕە و هەر پەڕەکێ ب تنێ سکان بکە. دڤێت هەر چار چوارگۆشەیێن ڕەش ب تەمامی دیار ببن.',
     appName: 'ڕاستکەر', appSub: 'ڕاستکرنا تاقیکرنان ب کامێرێ — بێ ئینتەرنێت کار دکەت',
     tabExams: 'تاقیکرن', tabClasses: 'پۆل', tabSettings: 'ڕێکخستن',
     newExam: 'تاقیکرنەکا نوو', newClass: 'پۆلەکێ نوو', noExams: 'هێشتا چ تاقیکرن نینن. تاقیکرنا خۆ یا ئێکێ دروست بکە.', noClasses: 'هێشتا چ پۆل نینن.',
@@ -1295,12 +1536,15 @@ const XLSREAD = (() => {
   const tplQ = tp => (tp.blocks || []).reduce((a, b) => a + b.nQ, 0);
   // geometry used to scan an exam: built-in sheet or custom template
   const geomCache = new Map();
-  function examGeom(ex) {
-    const key = ex.fmt + '|' + ex.nQ + '|' + ex.nChoices + '|' + (tplOf(ex)?.v || 0);
+  function examGeom(ex, ver = 0) {
+    const pages = ex.fmt === 'paper' && ex.paper && ex.paper.built ? ex.paper.built.pages : null;
+    const key = ex.fmt + '|' + ex.nQ + '|' + ex.nChoices + '|' + (tplOf(ex)?.v || 0) + (pages ? '|' + ex.id + '|' + ver : '');
     if (geomCache.has(key)) return geomCache.get(key);
     let g;
     const tp = tplOf(ex);
-    if (tp) g = { spec: OMR.tplSpec(tp), L: OMR.tplLayout(tp, ex.nChoices) };
+    if (pages) g = { spec: undefined, L: (pages[ver] || pages[0]).L };
+    else if (ex.fmt === 'paper') g = { spec: undefined, L: { r: 2.3, questions: [], idBubbles: [], verBubbles: [], T: { rows: 1e9 } } };
+    else if (tp) g = { spec: OMR.tplSpec(tp), L: OMR.tplLayout(tp, ex.nChoices) };
     else g = { spec: undefined, L: OMR.layout(ex.nQ, ex.nChoices, ex.fmt) };
     g.quad = g.spec ? g.spec.corners : [[9.5, 9.5], [200.5, 9.5], [200.5, 287.5], [9.5, 287.5]];
     geomCache.set(key, g); return g;
@@ -1350,12 +1594,13 @@ const XLSREAD = (() => {
       for (const gp of graded) {
         const map = mapOf(exam, gp.p.version), j = map.indexOf(m);
         if (j < 0) continue;
-        const kk = (exam.keys[gp.p.version] || [])[j] ?? -1;
-        if (gp.p.version === 0 || key == null) key = kk;
+        const kk = (exam.keys[gp.p.version] || [])[j] ?? -1, cm = exam.cmaps && exam.cmaps[gp.p.version] && exam.cmaps[gp.p.version][j];
+        const orig = x => x >= 0 && cm ? cm[x] : x;
+        if (gp.p.version === 0 || key == null) key = orig(kk);
         if (kk < 0) continue;
         const a = gp.p.answers[j], ok = a === kk;
         n++; if (ok) c++;
-        if (a >= 0) dist[a]++; else if (a === -1) blank++; else multi++;
+        if (a >= 0) dist[orig(a)]++; else if (a === -1) blank++; else multi++;
         if (upper.has(gp)) { nu++; if (ok) cu++; }
         if (lower.has(gp)) { nl++; if (ok) cl++; }
       }
@@ -1441,21 +1686,22 @@ const XLSREAD = (() => {
         <label class="wide">${esc(t('subtitle'))}<input id="f-sub" value="${esc(d.subtitle)}"></label>
         <label>${esc(t('klass'))}<select id="f-class"><option value="">${esc(t('noClass'))}</option>${db.classes.map(c => `<option value="${c.id}" ${c.id === d.classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
         <label>${esc(t('section'))}<select id="f-sec"></select></label>
-        <label class="wide">${esc(t('fmt'))}<select id="f-fmt"><option value="quarter" ${d.fmt === 'quarter' ? 'selected' : ''}>${esc(t('fmtQuarter'))}</option><option value="full" ${d.fmt === 'full' || !d.fmt ? 'selected' : ''}>${esc(t('fmtFull'))}</option>${db.templates.map(tp => `<option value="tpl:${tp.id}" ${d.fmt === 'tpl:' + tp.id ? 'selected' : ''}>${esc(t('tplPrefix'))}: ${esc(tp.name)} (${N(tplQ(tp))} ${esc(t('questions'))})</option>`).join('')}</select></label>
-        <label>${esc(t('nQ'))}<input id="f-nq" type="number" min="1" max="100" value="${d.nQ}"></label>
+        <label class="wide">${esc(t('fmt'))}<select id="f-fmt"><option value="paper" ${d.fmt === 'paper' ? 'selected' : ''}>${esc(t('fmtPaper'))}</option><option value="quarter" ${d.fmt === 'quarter' ? 'selected' : ''}>${esc(t('fmtQuarter'))}</option><option value="full" ${d.fmt === 'full' || !d.fmt ? 'selected' : ''}>${esc(t('fmtFull'))}</option>${db.templates.map(tp => `<option value="tpl:${tp.id}" ${d.fmt === 'tpl:' + tp.id ? 'selected' : ''}>${esc(t('tplPrefix'))}: ${esc(tp.name)} (${N(tplQ(tp))} ${esc(t('questions'))})</option>`).join('')}</select></label>
+        <label id="nq-lbl">${esc(t('nQ'))}<input id="f-nq" type="number" min="1" max="100" value="${d.nQ}"></label>
         <label>${esc(t('nChoices'))}<select id="f-nc">${[2, 3, 4, 5].map(n => `<option ${n === d.nChoices ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
         <label>${esc(t('nVersions'))}<select id="f-nv">${[1, 2, 3, 4].map(n => `<option ${n === d.nVersions ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
         <label>${esc(t('outOf'))}<input id="f-out" type="number" min="1" value="${d.outOf}"></label>
         <label>${esc(t('useIdLbl'))}<select id="f-useid"><option value="1" ${d.useId !== false ? 'selected' : ''}>${esc(t('useIdYes'))}</option><option value="0" ${d.useId === false ? 'selected' : ''}>${esc(t('useIdNo'))}</option></select></label>
         <label>${esc(t('passPct'))}<input id="f-pass" type="number" min="0" max="100" value="${d.passPct}"></label>
       </div>
-      <div class="panel"><div class="bar"><h3>${esc(t('key'))}</h3><div class="vtabs" id="vtabs"></div></div>
+      <div class="panel"><div class="bar"><h3 id="keyh">${esc(t('key'))}</h3><div class="vtabs" id="vtabs"></div></div>
         <div id="keygrid" class="keygrid"></div><div id="mapbox"></div></div>
       <div class="actions"><button class="btn primary" id="save">${esc(t('save'))}</button>${ex ? `<button class="btn danger" id="del">${esc(t('del'))}</button>` : ''}</div>`;
     const read = () => {
       d.title = $('#f-title').value.trim(); d.subtitle = $('#f-sub').value.trim(); d.classId = $('#f-class').value; d.secId = $('#f-sec').value;
       d.fmt = $('#f-fmt').value;
       const tp = d.fmt.startsWith('tpl:') ? tplById(d.fmt.slice(4)) : null;
+      if (d.fmt === 'paper') { d.paper ||= { qs: [], cols: 0, dir: 'rtl', shufQ: true, shufC: false, seed: Math.floor(Math.random() * 1e9) }; $('#f-nq').value = Math.max(1, d.paper.qs.length); }
       const maxQ = tp ? tplQ(tp) : d.fmt === 'quarter' ? OMR.QMAX : 100;
       d.nQ = Math.max(1, Math.min(maxQ, parseInt($('#f-nq').value) || 1));
       if (+$('#f-nq').value > d.nQ) { $('#f-nq').value = d.nQ; toast(tp ? tf('tplMax', { n: N(maxQ), c: N(tp.nC) }) : tf('quarterMax', { n: N(OMR.QMAX) }), 'bad'); }
@@ -1463,8 +1709,16 @@ const XLSREAD = (() => {
       d.useId = $('#f-useid').value === '1';
       d.outOf = Math.max(1, +$('#f-out').value || 100); d.passPct = Math.max(0, Math.min(100, +$('#f-pass').value || 50));
     };
+    let lastFmt = null, lastNC = null, lastNV = null;
     const drawKey = () => {
       read(); if (curV >= d.nVersions) curV = 0;
+      $('#nq-lbl').hidden = d.fmt === 'paper';
+      if (d.fmt === 'paper') {
+        $('#keyh').textContent = t('peTitle'); $('#vtabs').innerHTML = ''; $('#mapbox').innerHTML = '';
+        if (lastFmt !== 'paper' || lastNC !== d.nChoices || lastNV !== d.nVersions) { const onPE = re => { if (re) paperEditor(d, $('#keygrid'), onPE); }; paperEditor(d, $('#keygrid'), onPE); }
+        lastFmt = d.fmt; lastNC = d.nChoices; lastNV = d.nVersions; return;
+      }
+      $('#keyh').textContent = t('key'); lastFmt = d.fmt;
       $('#vtabs').innerHTML = d.nVersions > 1 ? [...Array(d.nVersions).keys()].map(v => `<button class="${v === curV ? 'on' : ''}" data-v="${v}">${esc(t('version'))} ${esc(labels()[v])}</button>`).join('') : '';
       $('#vtabs').querySelectorAll('button').forEach(b => b.onclick = () => { curV = +b.dataset.v; drawKey(); });
       const k = keyOf(curV), L = labels();
@@ -1509,7 +1763,23 @@ const XLSREAD = (() => {
     $('#vtabs').addEventListener('click', () => { }, true);
     drawKey();
     $('#back').onclick = () => go(ex ? 'exam' : 'exams', { id: d.id });
-    $('#save').onclick = () => { if (commit()) { toast('✓ ' + t('save')); go('exam', { id: d.id }); } };
+    $('#save').onclick = async () => {
+      if (d.fmt === 'paper') {
+        read();
+        if (!d.title) { toast(t('title') + ' ?', 'bad'); $('#f-title').focus(); return; }
+        if (!d.paper.qs.length) return toast(t('peNone'), 'bad');
+        const old = ex && ex.paper && ex.paper.built ? ex.paper.built.hash : null;
+        if (old && old !== paperHash(d) && papersOf(d.id).length && !confirm(t('peChangedWarn'))) return;
+        $('#save').disabled = true;
+        try { await buildPaper(d); } finally { $('#save').disabled = false; }
+        const i = db.exams.findIndex(e => e.id === d.id);
+        if (i >= 0) db.exams[i] = d; else db.exams.push(d);
+        persist(); toast('✓ ' + t('save'));
+        if (d.paper.built.pages.some(pg => pg.overflow)) toast(t('peOverflow'), 'bad');
+        go('exam', { id: d.id }); return;
+      }
+      if (commit()) { toast('✓ ' + t('save')); go('exam', { id: d.id }); }
+    };
     if (ex) $('#del').onclick = () => { if (confirm(t('confirmDel'))) { db.exams = db.exams.filter(e => e.id !== d.id); papersOf(d.id).forEach(p => IDB.del(p.id)); delete db.papers[d.id]; persist(); go('exams'); } };
     // switching version tab must keep map edits
     $('#vtabs').addEventListener('mousedown', () => readMap(), true);
@@ -1522,8 +1792,8 @@ const XLSREAD = (() => {
     const g = papers.map(p => grade(ex, p)), s = stats(g.map(x => x.pct));
     const missing = [...Array(ex.nVersions).keys()].reduce((m, v) => m + [...Array(ex.nQ).keys()].filter(i => !((ex.keys[v] || [])[i] >= 0)).length, 0);
     el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><h2>${esc(ex.title)}</h2><button class="btn ghost" id="edit">✎ ${esc(t('edit'))}</button></div>
-      <div class="meta">${c ? `<span>${esc(examClassLabel(ex))}</span>` : ''}<span>${N(ex.nQ)} ${esc(t('questions'))}</span><span>${isTpl(ex) ? esc(t('tplPrefix') + ': ' + (tplOf(ex)?.name || '?')) : esc(t(ex.fmt === 'quarter' ? 'fmtQuarterShort' : 'fmtFullShort'))}</span><span>${esc(t('nVersions'))}: ${N(ex.nVersions)}</span><span>${esc(t('outOf'))}: ${N(ex.outOf)}</span></div>
-      ${missing ? `<div class="alert">${esc(t('keyIncomplete'))}: ${N(missing)}</div>` : ''}
+      <div class="meta">${c ? `<span>${esc(examClassLabel(ex))}</span>` : ''}<span>${N(ex.nQ)} ${esc(t('questions'))}</span><span>${isPaper(ex) ? esc(t('fmtPaperShort')) : isTpl(ex) ? esc(t('tplPrefix') + ': ' + (tplOf(ex)?.name || '?')) : esc(t(ex.fmt === 'quarter' ? 'fmtQuarterShort' : 'fmtFullShort'))}</span><span>${esc(t('nVersions'))}: ${N(ex.nVersions)}</span><span>${esc(t('outOf'))}: ${N(ex.outOf)}</span></div>
+      ${missing ? `<div class="alert">${esc(t('keyIncomplete'))}: ${N(missing)}</div>` : ''}${isPaper(ex) && ex.paper && ex.paper.built && ex.paper.built.pages.some(pg => pg.overflow) ? `<div class="alert">${esc(t('peOverflow'))}</div>` : ''}
       <div class="big-actions">
         <button class="act" data-go="print"><i>🖨</i>${esc(t('print'))}</button>
         <button class="act main" data-go="scan"><i>📷</i>${esc(t('scan'))}</button>
@@ -1553,6 +1823,7 @@ const XLSREAD = (() => {
   }
   function vPrint(el) {
     const ex = examById(route.id); if (!ex) return go('exams');
+    if (isPaper(ex)) return vPrintPaper(el, ex);
     if (isTpl(ex) && tplOf(ex) && tplOf(ex).printable) return vPrintTpl(el, ex, tplOf(ex));
     if (isTpl(ex)) {
       el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><h2>${esc(t('print'))}</h2></div><div class="alert">${esc(t('tplPrintHint'))}</div>${tplOf(ex) ? `<div class="preview"><img src="${tplOf(ex).img}" style="max-width:100%;display:block;margin:auto"></div>` : ''}`;
@@ -1635,7 +1906,8 @@ const XLSREAD = (() => {
     const status = (s, cls = '') => { const e = $('#st'); e.textContent = s; e.className = 'scan-status ' + cls; };
 
     function handleResult(G, det, srcCanvas, fromUpload) {
-      const r = OMR.read(G, det, ex.nQ, ex.nChoices, examGeom(ex).L);
+      let r = OMR.read(G, det, ex.nQ, ex.nChoices, examGeom(ex).L);
+      if (isPaper(ex) && r.version > 0 && r.version < ex.nVersions) r = Object.assign(OMR.read(G, det, ex.nQ, ex.nChoices, examGeom(ex, r.version).L), { version: r.version });
       if (keyMode) {
         ex.keys[route.keyVersion] = r.answers.map(a => a >= 0 ? a : -1); persist();
         beep(true); toast('✓ ' + t('keyScanned')); stop(); go('examEdit', { id: ex.id }); return 'ok';
@@ -1669,7 +1941,7 @@ const XLSREAD = (() => {
       const fc = $('#fc'), W = Math.min(src.width, 1400), s = W / src.width;
       fc.width = W; fc.height = Math.round(src.height * s);
       const c = fc.getContext('2d'); c.drawImage(src, 0, 0, fc.width, fc.height);
-      const L = examGeom(ex).L, P = (x, y) => OMR.project(det.H, x, y).map(v => v * s);
+      const L = examGeom(ex, info && info.paper ? info.paper.version : Math.max(0, r.version)).L, P = (x, y) => OMR.project(det.H, x, y).map(v => v * s);
       const rad = (x, y, r0) => { const a = P(x, y), b = P(x + r0, y); return Math.hypot(a[0] - b[0], a[1] - b[1]); };
       c.lineWidth = Math.max(2, fc.width / 400);
       L.questions.forEach((q, i) => {
@@ -1839,7 +2111,7 @@ const XLSREAD = (() => {
         if (!blob) { box.querySelector('small').textContent = t('imgNone'); return; }
         const im = await loadImage(blob), c = box.querySelector('canvas'), x = c.getContext('2d');
         c.width = im.width; c.height = im.height; x.drawImage(im, 0, 0);
-        const Lx = examGeom(ex).L, f = p.img, sx = c.width / (f.x1 - f.x0), sy = c.height / (f.y1 - f.y0);
+        const Lx = examGeom(ex, p.version).L, f = p.img, sx = c.width / (f.x1 - f.x0), sy = c.height / (f.y1 - f.y0);
         const P = b => [(b.x - f.x0) * sx, (b.y - f.y0) * sy];
         x.lineWidth = Math.max(2, c.width / 260);
         Lx.questions.slice(0, ex.nQ).forEach((q, i) => {
@@ -2306,6 +2578,165 @@ const XLSREAD = (() => {
     });
     const onR = () => draw(); window.addEventListener('resize', onR);
     cleanup = () => window.removeEventListener('resize', onR);
+  }
+
+
+  // ---------- question papers (questions printed with bubbles) ----------
+  const isPaper = ex => ex && ex.fmt === 'paper';
+  function paperLabels(d) { return d.paper && d.paper.dir === 'ltr' ? LABELS.en : labels(); }
+  function paperHash(d) {
+    const p = d.paper || {};
+    return JSON.stringify([(p.qs || []).map(q => [q.t, q.c]), d.nChoices, d.nVersions, p.cols, p.size || 1, p.dir, p.shufQ, p.shufC, p.seed, d.title, d.subtitle, d.useId !== false, d.classId, d.secId]);
+  }
+  async function buildPaper(d) {
+    try { await Promise.all([document.fonts.load('400 20px Naskh'), document.fonts.load('700 20px Naskh')]); } catch (e) { }
+    const cx = buildPaper.cx ||= document.createElement('canvas').getContext('2d');
+    const measure = (s, f, b) => { cx.font = `${b ? 700 : 400} ${f * 10}px Naskh, 'Noto Naskh Arabic', serif`; return cx.measureText(String(s)).width / 10; };
+    const p = d.paper, nC = d.nChoices, nV = d.nVersions, lab = paperLabels(d);
+    p.qs.forEach(q => { q.c = (q.c || []).slice(0, nC); while (q.c.length < nC) q.c.push(''); if (q.k >= nC) q.k = -1; });
+    const P = PAPER.perms(p, nV, nC), pages = [];
+    for (let v = 0; v < nV; v++) {
+      const qs = P[v].q.map((i, j) => ({ t: p.qs[i].t, c: P[v].c[j].map(ci => p.qs[i].c[ci]) }));
+      const o = { title: d.title, subtitle: d.subtitle, className: examClassLabel(d, false), useId: d.useId !== false, nV, ver: v, nC, labels: lab, verLabels: lab,
+        digits: n => p.dir === 'ltr' ? String(n) : N(n), dir: p.dir, cols: p.cols, size: p.size || 1, t: Object.assign({}, I18N[db.settings.lang], { sInstrP: t('sInstrP') }), qs };
+      const pg = PAPER.build(o, measure);
+      pages.push({ items: pg.items, L: pg.L, f: pg.f, overflow: pg.overflow, nameAt: pg.nameAt, rtl: pg.rtl, k: pg.k, size: pg.size });
+    }
+    d.nQ = p.qs.length;
+    d.keys = P.map(pm => pm.q.map((i, j) => p.qs[i].k >= 0 ? pm.c[j].indexOf(p.qs[i].k) : -1));
+    d.maps = P.map((pm, v) => v ? pm.q.slice() : null);
+    d.cmaps = P.map(pm => pm.c);
+    p.built = { hash: paperHash(d), pages };
+    geomCache.clear();
+    return pages;
+  }
+  function paperEditor(d, host, onChange) {
+    d.paper ||= { qs: [], cols: 0, dir: 'rtl', shufQ: true, shufC: false, seed: Math.floor(Math.random() * 1e9) };
+    const p = d.paper, nC = d.nChoices;
+    p.qs.forEach(q => { q.c ||= []; while (q.c.length < nC) q.c.push(''); q.c.length = nC; if (q.k >= nC) q.k = -1; });
+    const L = paperLabels(d);
+    const missingK = () => p.qs.filter(q => !(q.k >= 0)).length;
+    host.innerHTML = `
+      <div class="pe-opts">
+        <label>${esc(t('peSize'))}<select id="pe-size" class="sel-sm"><option value="1" ${(p.size || 1) === 1 ? 'selected' : ''}>${esc(t('peSize1'))}</option><option value="2" ${p.size === 2 ? 'selected' : ''}>${esc(t('peSize2'))}</option><option value="4" ${p.size === 4 ? 'selected' : ''}>${esc(t('peSize4'))}</option></select></label>
+        <label>${esc(t('peCols'))}<select id="pe-cols" class="sel-sm"><option value="0" ${!p.cols ? 'selected' : ''}>${esc(t('peAuto'))}</option><option value="1" ${p.cols === 1 ? 'selected' : ''}>1</option><option value="2" ${p.cols === 2 ? 'selected' : ''}>2</option></select></label>
+        <label>${esc(t('peDir'))}<select id="pe-dir" class="sel-sm"><option value="rtl" ${p.dir !== 'ltr' ? 'selected' : ''}>${esc(t('peRtl'))}</option><option value="ltr" ${p.dir === 'ltr' ? 'selected' : ''}>${esc(t('peLtr'))}</option></select></label>
+        ${d.nVersions > 1 ? `<label class="chk"><input type="checkbox" id="pe-sq" ${p.shufQ ? 'checked' : ''}> ${esc(t('peShufQ'))}</label><label class="chk"><input type="checkbox" id="pe-sc" ${p.shufC ? 'checked' : ''}> ${esc(t('peShufC'))}</label><button class="btn sm ghost" id="pe-reshuf">🔀 ${esc(t('peReshuf'))}</button>` : ''}
+      </div>
+      <div class="pe-tools"><button class="btn sm primary" id="pe-add">+ ${esc(t('peAdd'))}</button><button class="btn sm" id="pe-paste">📋 ${esc(t('pePaste'))}</button><label class="btn sm">📥 ${esc(t('peXls'))}<input type="file" id="pe-xls" accept=".xlsx,.csv,.txt" hidden></label><button class="btn sm" id="pe-prev">👁 ${esc(t('pePreview'))}</button></div>
+      <div id="pe-list" class="pe-list"></div>
+      <div class="pe-foot" id="pe-foot"></div>`;
+    const foot = () => { const m = missingK(); $('#pe-foot').innerHTML = `${esc(tf('peCount', { n: N(p.qs.length) }))}${m ? ` — <span class="warn">${esc(tf('peNoKey', { n: N(m) }))}</span>` : ''}`; };
+    const list = () => {
+      $('#pe-list').innerHTML = p.qs.length ? p.qs.map((q, i) => `<div class="qcard" data-i="${i}">
+        <div class="qhead"><b class="qnum">${N(i + 1)}</b><textarea data-f="t" rows="2" placeholder="${esc(t('peStem'))}" dir="auto">${esc(q.t)}</textarea>
+          <div class="qbtns"><button class="btn ghost sm" data-mv="-1" aria-label="up">↑</button><button class="btn ghost sm" data-mv="1" aria-label="down">↓</button><button class="btn ghost sm" data-del aria-label="delete">✕</button></div></div>
+        <div class="qchoices">${q.c.map((c, k) => `<label class="qch ${q.k === k ? 'ok' : ''}"><input type="radio" name="k${i}" data-k="${k}" ${q.k === k ? 'checked' : ''}><span class="lt">${esc(L[k])}</span><input data-c="${k}" value="${esc(c)}" placeholder="${esc(t('peChoice'))}" dir="auto"></label>`).join('')}</div>
+      </div>`).join('') : `<div class="empty slim">${esc(t('peEmpty'))}</div>`;
+      $('#pe-list').querySelectorAll('.qcard').forEach(card => {
+        const q = p.qs[+card.dataset.i];
+        card.querySelector('textarea').oninput = e => { q.t = e.target.value; };
+        card.querySelectorAll('[data-c]').forEach(inp => inp.oninput = () => { q.c[+inp.dataset.c] = inp.value; });
+        card.querySelectorAll('[data-k]').forEach(r => r.onchange = () => { q.k = +r.dataset.k; card.querySelectorAll('.qch').forEach((l, k) => l.classList.toggle('ok', k === q.k)); foot(); });
+        card.querySelector('[data-del]').onclick = () => { p.qs.splice(+card.dataset.i, 1); list(); onChange(); };
+        card.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const i = +card.dataset.i, j = i + +b.dataset.mv; if (j < 0 || j >= p.qs.length) return; [p.qs[i], p.qs[j]] = [p.qs[j], p.qs[i]]; list(); });
+      });
+      foot();
+    };
+    list();
+    $('#pe-cols').onchange = e => { p.cols = +e.target.value; };
+    $('#pe-size').onchange = e => { p.size = +e.target.value; };
+    $('#pe-dir').onchange = e => { p.dir = e.target.value; paperEditor(d, host, onChange); };
+    if ($('#pe-sq')) { $('#pe-sq').onchange = e => { p.shufQ = e.target.checked; }; $('#pe-sc').onchange = e => { p.shufC = e.target.checked; }; $('#pe-reshuf').onclick = () => { p.seed = Math.floor(Math.random() * 1e9); toast('🔀 ' + t('peReshufDone')); }; }
+    $('#pe-add').onclick = () => { p.qs.push({ t: '', c: Array(nC).fill(''), k: -1 }); list(); onChange(); const ta = $('#pe-list').querySelectorAll('textarea'); ta[ta.length - 1].focus(); };
+    $('#pe-paste').onclick = () => modal(`<div class="bar"><h3>${esc(t('pePaste'))}</h3><button class="btn ghost" data-x>✕</button></div>
+      <p class="hint">${esc(t('pePasteHelp'))}</p>
+      <pre class="pe-ex" dir="auto">${esc(t('pePasteEx'))}</pre>
+      <textarea id="pp-t" rows="10" dir="auto"></textarea><p id="pp-info" class="hint"></p>
+      <div class="actions"><button class="btn primary" data-a>${esc(t('peAppend'))}</button><button class="btn" data-r>${esc(t('peReplace'))}</button></div>`, (m, close) => {
+      const ta = m.querySelector('#pp-t'), info = () => { const qs = PAPER.parse(ta.value); m.querySelector('#pp-info').textContent = tf('peParsed', { n: N(qs.length), k: N(qs.filter(q => q.k >= 0).length) }); return qs; };
+      ta.oninput = info; m.querySelector('[data-x]').onclick = close;
+      const take = rep => { const qs = info(); if (!qs.length) return toast(t('peNone'), 'bad'); if (rep) p.qs.length = 0; for (const q of qs) p.qs.push(q); close(); onChange(true); };
+      m.querySelector('[data-a]').onclick = () => take(false); m.querySelector('[data-r]').onclick = () => take(true);
+    });
+    $('#pe-xls').onchange = async e => {
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try {
+        const wb = await XLSREAD.read(f), rows = (wb.sheets.find(s => s.rows.length) || { rows: [] }).rows;
+        let start = 0, qc = 0, kc = -1;
+        const hi = rows.findIndex(r => r.some(x => /سؤال|السؤال|الاسئلة|الأسئلة|پسیار|question/i.test(x)));
+        if (hi >= 0 && hi < 6) { start = hi + 1; qc = rows[hi].findIndex(x => /سؤال|السؤال|الاسئلة|الأسئلة|پسیار|question/i.test(x)); kc = rows[hi].findIndex(x => /صحيح|الجواب|الإجابة|الاجابة|بەرسڤ|answer|correct|key/i.test(x)); }
+        else { const w = Math.max(...rows.map(r => r.length)); if (w >= nC + 2) kc = nC + 1; }
+        const CH = { 'أ': 0, 'ا': 0, 'آ': 0, 'ب': 1, 'ج': 2, 'د': 3, 'ه': 4, 'هـ': 4, a: 0, b: 1, c: 2, d: 3, e: 4 };
+        let n = 0;
+        for (const r of rows.slice(start)) {
+          const stem = (r[qc] || '').trim(); if (!stem) continue;
+          const c = []; for (let k = 0; k < nC; k++) c.push((r[qc + 1 + k] || '').trim());
+          let key = -1; const kv = kc >= 0 ? String(r[kc] || '').trim() : '';
+          if (kv) { const low = kv.toLowerCase(), num = parseInt(String(kv).replace(/[٠-٩]/g, x => '٠١٢٣٤٥٦٧٨٩'.indexOf(x))); if (CH[low] != null) key = CH[low]; else if (num >= 1 && num <= nC) key = num - 1; else key = c.indexOf(kv); }
+          p.qs.push({ t: stem, c, k: key }); n++;
+        }
+        toast(tf('peParsed', { n: N(n), k: N(p.qs.slice(-n).filter(q => q.k >= 0).length) })); onChange(true);
+      } catch (err) { console.error(err); toast(err.code === 'xls' ? t('xlsOld') : t('xlsErr'), 'bad'); }
+    };
+    $('#pe-prev').onclick = async () => {
+      if (!p.qs.length) return toast(t('peNone'), 'bad');
+      onChange(false, true);
+      const pages = await buildPaper(d), lab = paperLabels(d);
+      let v = 0;
+      modal(`<div class="bar"><h3>${esc(t('pePreview'))}</h3><button class="btn ghost" data-x>✕</button></div><div class="vtabs" id="pv-tabs"></div><div id="pv-msg"></div><div class="preview" id="pv-svg"></div>`, (m, close) => {
+        m.querySelector('[data-x]').onclick = close;
+        const draw = () => {
+          m.querySelector('#pv-tabs').innerHTML = pages.length > 1 ? pages.map((_, i) => `<button class="${i === v ? 'on' : ''}" data-v="${i}">${esc(t('version'))} ${esc(lab[i])}</button>`).join('') : '';
+          m.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { v = +b.dataset.v; draw(); });
+          m.querySelector('#pv-msg').innerHTML = pages[v].overflow ? `<div class="alert">${esc(t('peOverflow'))}</div>` : '';
+          m.querySelector('#pv-svg').innerHTML = PAPER.svgFor(pages[v]);
+        };
+        draw();
+      });
+    };
+  }
+  function vPrintPaper(el, ex) {
+    const built = ex.paper && ex.paper.built;
+    if (!built || built.hash !== paperHash(ex)) {
+      el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><h2>${esc(t('print'))}</h2></div><div class="alert">${esc(t('peNeedSave'))}</div><div class="actions"><button class="btn primary" id="edit">✎ ${esc(t('edit'))}</button></div>`;
+      $('#back').onclick = () => go('exam', { id: ex.id }); $('#edit').onclick = () => go('examEdit', { id: ex.id }); return;
+    }
+    const pages = built.pages, lab = paperLabels(ex), studs = examStudents(ex), c = classById(ex.classId);
+    el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><h2>${esc(t('print'))}</h2></div>
+      ${pages.some(pg => pg.overflow) ? `<div class="alert">${esc(t('peOverflow'))}</div>` : ''}
+      <div class="panel form">
+        <label class="radio wide"><input type="radio" name="pm" value="blank" checked> ${esc(t('printBlank'))}</label>
+        <label>${esc(t('copies'))}<input id="p-copies" type="number" min="1" max="300" value="${Math.max(1, studs.length || 30)}"></label>
+        ${pages.length > 1 ? `<label>${esc(t('version'))}<select id="p-ver"><option value="alt">${esc(t('alternate'))}</option>${pages.map((_, v) => `<option value="${v}">${esc(lab[v])}</option>`).join('')}</select></label>` : ''}
+        ${studs.length ? `<label class="radio wide"><input type="radio" name="pm" value="students"> ${esc(t('printStudents'))} (${N(studs.length)})</label>` : ''}
+      </div>
+      <p class="hint">${esc(t((pages[0].size || 1) > 1 ? 'printHintPn' : 'printHintP'))}</p>
+      <div class="actions"><button class="btn primary" id="go">🖨 ${esc(t('printNow'))}</button></div>
+      <div class="preview" id="pv"></div>`;
+    const build = () => {
+      const mode = (el.querySelector('input[name=pm]:checked') || {}).value, vs = $('#p-ver') ? $('#p-ver').value : '0';
+      const verFor = i => vs === 'alt' ? i % pages.length : +vs, out = [];
+      if (mode === 'students') [...studs].sort((a, b) => (a.sec > b.sec) - (a.sec < b.sec) || a.id - b.id).forEach((s, i) => out.push(PAPER.svgFor(pages[verFor(i)], { id: ex.useId !== false ? s.id : null, name: s.name }, c && secOf(c, s.sec) ? c.name + ' ' + secOf(c, s.sec).name : null)));
+      else { const n = Math.max(1, Math.min(300, parseInt($('#p-copies').value) || 1)); for (let i = 0; i < n; i++) out.push(PAPER.svgFor(pages[verFor(i)])); }
+      return out;
+    };
+    const per = pages[0].size || 1;
+    const cell = sv => {
+      const inner = sv.replace(' width="210mm" height="297mm"', ' width="210" height="297"');
+      return per === 2 ? `<div class="tcell"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 210" preserveAspectRatio="xMidYMid meet"><g transform="translate(0 210) rotate(-90)">${inner}</g></svg></div>` : `<div class="tcell">${inner.replace('<svg ', '<svg preserveAspectRatio="xMidYMid meet" ')}</div>`;
+    };
+    const sheets = () => {
+      const all = build();
+      if (per === 1) return all.map(s => `<div class="page">${s}</div>`);
+      const out = [];
+      for (let i = 0; i < all.length; i += per) out.push(`<div class="page tpage per${per} nopad">${all.slice(i, i + per).map(cell).join('')}${per === 4 ? '<i class="cut v"></i>' : ''}<i class="cut h"></i></div>`);
+      return out;
+    };
+    const pv = () => { $('#pv').innerHTML = sheets()[0]; $('#pv').classList.toggle('quadpv', per > 1); };
+    el.querySelector('.panel.form').addEventListener('change', pv); pv();
+    $('#back').onclick = () => go('exam', { id: ex.id });
+    $('#go').onclick = () => printPages(sheets().join(''));
   }
 
 
