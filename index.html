@@ -193,6 +193,23 @@ small { color: var(--muted); font-size: 13px; }
 .page.tpage .cut.v { left: 50%; top: 0; bottom: 0; border-left-width: 1px; }
 .page.tpage .cut.h { top: 50%; left: 0; right: 0; border-top-width: 1px; }
 .preview.quadpv .page.tpage { width: 100%; max-width: 620px; aspect-ratio: 210 / 297; margin: 0 auto; box-shadow: 0 2px 12px #0003; }
+.secbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.secbar button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 14px; cursor: pointer; min-height: 38px; }
+.secbar button small { color: var(--muted); margin-inline-start: 4px; }
+.secbar button.on { background: var(--pri); color: #fff; border-color: var(--pri); }
+.secbar button.on small { color: #fffc; }
+.secbar button.add { border-style: dashed; color: var(--pri); }
+.secacts { display: flex; gap: 8px; margin: -2px 0 10px; }
+.secline { font-size: 13px; color: var(--pri) !important; }
+.secpreview { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.secpreview span { background: var(--pri-soft); color: var(--pri); border-radius: 99px; padding: 2px 14px; font-weight: 700; }
+.panel.imp { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.panel.imp details { width: 100%; }
+.panel.imp summary { cursor: pointer; color: var(--muted); }
+.panel.imp textarea { margin-top: 8px; }
+.empty.slim { padding: 16px; border: 0; }
+.imp-h { margin: 12px 0 6px; }
+.tbl td select.sel-sm { min-width: 64px; }
 #toasts { position: fixed; bottom: 16px; inset-inline: 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 60; pointer-events: none; }
 .toast { background: #1c2422; color: #fff; padding: 8px 16px; border-radius: 10px; box-shadow: 0 4px 14px #0004; transition: opacity .4s, transform .4s; max-width: 520px; }
 .toast.bad { background: var(--bad); }
@@ -930,7 +947,7 @@ const I18N = {
     tplId: 'رقم الطالب (اختياري)', tplDigits: 'عدد الخانات', tplOrder: 'ترتيب الأرقام', order09: '٠، ١ … ٩', order10: '١ … ٩ ثم ٠', tplSetId: 'تحديد مكان رقم الطالب',
     tapIdA: 'اضغط على الرقم {v} في الخانة الأولى', tapIdB: 'اضغط على الرقم الأخير ({v}) في الخانة الأولى نفسها', tapIdC: 'اضغط على الرقم {v} في الخانة الأخيرة',
     tplVer: 'النموذج (اختياري)', tplVerN: 'عدد النماذج', tplNoVer: 'بدون', tplSetVer: 'تحديد مكان النموذج', tapVerA: 'اضغط على فقاعة النموذج الأول', tapVerB: 'اضغط على فقاعة النموذج الأخير',
-    tplSize: 'حجم دائرة القراءة', tplTest: 'تجربة بصورة ورقة معبّأة', tplTestRes: 'رقم الطالب: {id} · النموذج: {v} · أسئلة مقروءة: {n} من {t}',
+    tplSize: 'حجم دائرة القراءة', tplTest: 'تجربة بصورة ورقة معبّأة', tplTestRes: 'رقم الطالب: {id}، النموذج: {v}، أسئلة مقروءة: {n} من {t}',
     tplNeed: 'حدّد العلامات الأربع ومجموعة أسئلة واحدة على الأقل', tplInUse: 'هذا النموذج مستخدم في اختبار — غيّر ورقة الاختبار أولاً', tplSaved: 'تم حفظ النموذج',
     tplPrintHint: 'هذا الاختبار يستخدم نموذجاً مخصصاً — اطبع الورقة من ملفها الأصلي بالحجم نفسه، والبرنامج يقرؤها بالكاميرا.', tplMax: 'هذا النموذج يتسع لـ {n} سؤالاً و{c} خيارات كحد أقصى',
     tapHelpLoupe: 'ضع إصبعك على الصورة وحرّكه، ستكبّر العدسة المكان، ثم ارفع إصبعك. البرنامج يضبط النقطة على مركز الدائرة تلقائياً.', undo: 'تراجع', discard: 'لم تحفظ التغييرات. هل تريد الخروج؟',
@@ -939,6 +956,11 @@ const I18N = {
     imgLoading: 'جارٍ تحميل صورة الورقة…', imgNone: 'لا توجد صورة محفوظة لهذه الورقة', imgHint: 'صورة ورقة الطالب — اضغط للتكبير. الأخضر صحيح، الأحمر إجابة الطالب الخاطئة، البرتقالي الإجابة الصحيحة.',
     perPage: 'عدد الأوراق في الصفحة', printHintT: 'اطبع بدون تكبير أو تصغير (100%). عند طباعة أكثر من ورقة في الصفحة، قصّها على الخطوط المتقطعة وامسح كل ورقة وحدها.',
     tplPrintable: 'صورة النموذج نظيفة (ملف تصميم أو سكانر) — يمكن طباعتها من البرنامج',
+    section: 'الشعبة', secCount: 'عدد الشعب', secStyle: 'تسمية الشعب', allSecs: 'كل الشعب', allSecsExam: 'كل الشعب (امتحان موحّد)', addSec: 'شعبة', secName: 'اسم الشعبة', renameSec: 'إعادة تسمية', delSec: 'حذف الشعبة',
+    delSecConfirm: 'حذف الشعبة «{s}» مع طلابها ({n})؟', lastSec: 'لا يمكن حذف الشعبة الوحيدة', classNamePh: 'مثلاً: الصف الثاني عشر العلمي', secsN: '{n} شعب', studentsN: '{n} طالب', noStudents: 'لا يوجد طلاب في هذه الشعبة بعد.',
+    importXlsx: 'استيراد الأسماء من Excel', pasteList: 'أو الصق قائمة أسماء', importTitle: 'استيراد الطلاب', sheet: 'الورقة', hasHeader: 'الصف الأول عناوين أعمدة', colName: 'عمود الاسم', colId: 'عمود الرقم', colSec: 'عمود الشعبة',
+    autoNum: '— ترقيم تلقائي —', noCol: '— لا يوجد —', targetSec: 'إضافة إلى الشعبة', preview: 'معاينة', importBtn: 'استيراد {n} طالباً', imported: 'أُضيف {n} طالباً', idFixed: '{n} أرقام مكررة أُعطيت أرقاماً جديدة',
+    xlsErr: 'تعذّر قراءة الملف. احفظه بصيغة .xlsx أو .csv ثم أعد المحاولة.', xlsOld: 'ملفات .xls القديمة غير مدعومة — افتحه في Excel واختر «حفظ باسم» ← «مصنف Excel (.xlsx)».', xlsEmpty: 'الملف فارغ.',
     appName: 'مُصحِّح', appSub: 'تصحيح الاختبارات بالكاميرا — يعمل دون إنترنت',
     tabExams: 'الاختبارات', tabClasses: 'الصفوف', tabSettings: 'الإعدادات',
     newExam: 'اختبار جديد', newClass: 'صف جديد', noExams: 'لا توجد اختبارات بعد. أنشئ اختبارك الأول.', noClasses: 'لا توجد صفوف بعد.',
@@ -966,7 +988,7 @@ const I18N = {
     q: 'س', pCorrect: 'نسبة الإجابة الصحيحة', disc: 'معامل التمييز', dist: 'توزيع الإجابات', note: 'ملاحظة',
     nVeryHard: 'صعب جداً', nVeryEasy: 'سهل جداً', nNegDisc: 'تمييز سالب — راجع المفتاح', nLowDisc: 'تمييز ضعيف', nGood: 'جيد',
     analysisHelp: 'معامل التمييز = نسبة الإجابة الصحيحة في أعلى 27% ناقص أدنى 27%. أكبر من 0.3 ممتاز، أقل من 0.2 ضعيف، والسالب يعني غالباً خطأ في المفتاح أو صياغة السؤال.',
-    classesHelp: 'أضف الطلاب بالصق قائمة: كل سطر «الرقم ← الاسم» أو الاسم فقط (يُرقَّم تلقائياً). الأرقام من 1 إلى 9999.',
+    classesHelp: 'لكل صف شعب. أضف الطلاب باستيراد ملف Excel (عمود للأسماء، واختيارياً عمود للأرقام وعمود للشعبة)، أو بلصق قائمة. أرقام الطلاب لا تتكرر داخل الصف.',
     className: 'اسم الصف', students: 'الطلاب', pasteStudents: 'لصق قائمة الطلاب', idTaken: 'الرقم مستخدم',
     settings: 'الإعدادات', lang: 'لغة الواجهة', labels: 'رموز الخيارات', digits: 'شكل الأرقام في الورقة', backup: 'نسخة احتياطية',
     exportJson: 'تصدير نسخة احتياطية', importJson: 'استيراد نسخة احتياطية', importOk: 'تم الاستيراد', clearAll: 'حذف كل البيانات',
@@ -988,7 +1010,7 @@ const I18N = {
     tplId: 'ژمارا قوتابی (ب دلێ خۆ)', tplDigits: 'ژمارا خانەیان', tplOrder: 'ڕیزبەندیا ژمارەیان', order09: '٠، ١ … ٩', order10: '١ … ٩ پاشان ٠', tplSetId: 'دیارکرنا جهێ ژمارا قوتابی',
     tapIdA: 'ل سەر ژمارا {v} د خانەیا ئێکێ دا بدە', tapIdB: 'ل سەر ژمارا دووماهیێ ({v}) د هەمان خانەیا ئێکێ دا بدە', tapIdC: 'ل سەر ژمارا {v} د خانەیا دووماهیێ دا بدە',
     tplVer: 'مۆدێل (ب دلێ خۆ)', tplVerN: 'ژمارا مۆدێلان', tplNoVer: 'بێ', tplSetVer: 'دیارکرنا جهێ مۆدێلێ', tapVerA: 'ل سەر بازنێ مۆدێلا ئێکێ بدە', tapVerB: 'ل سەر بازنێ مۆدێلا دووماهیێ بدە',
-    tplSize: 'قەبارێ بازنێ خواندنێ', tplTest: 'تاقیکرن ب وێنەیێ پەڕەکا پڕکری', tplTestRes: 'ژمارا قوتابی: {id} · مۆدێل: {v} · پسیارێن خواندی: {n} ژ {t}',
+    tplSize: 'قەبارێ بازنێ خواندنێ', tplTest: 'تاقیکرن ب وێنەیێ پەڕەکا پڕکری', tplTestRes: 'ژمارا قوتابی: {id}، مۆدێل: {v}، پسیارێن خواندی: {n} ژ {t}',
     tplNeed: 'هەر چار نیشانان و کێمتر کۆمەکا پسیاران دیار بکە', tplInUse: 'ئەڤ مۆدێلە د تاقیکرنەکێ دا هاتیە بکارئینان — پێشی پەڕا تاقیکرنێ بگوهۆڕە', tplSaved: 'مۆدێل پاشەکەفت بوو',
     tplPrintHint: 'ئەڤ تاقیکرنە مۆدێلەکا تایبەت بکار دئینیت — پەڕێ ژ فایلا وێ یا ئەسلی ب هەمان قەبارە چاپ بکە، و بەرنامە ب کامێرێ دخوینیت.', tplMax: 'ئەڤ مۆدێلە زێدەتر ژ {n} پسیاران و {c} هەلبژارتنان ناگریت',
     tapHelpLoupe: 'پەنجا خۆ ل سەر وێنەی دابنێ و بلڤینە، عەدەسە دێ جهی مەزن کەت، پاشان پەنجێ هلگرە. بەرنامە خالێ ب خۆکاری ل سەر ناڤەڕاستا بازنی ڕێک دئێخیت.', undo: 'زڤڕاندن', discard: 'گوهۆڕین پاشەکەفت نەبوون. دێ دەرکەڤی؟',
@@ -997,6 +1019,11 @@ const I18N = {
     imgLoading: 'وێنەیێ پەڕێ بار دبیت…', imgNone: 'چ وێنە بۆ ڤێ پەڕێ پاشەکەفت نەبوویە', imgHint: 'وێنەیێ پەڕا قوتابی — بۆ مەزنکرنێ بدە. کەسک دروستە، سۆر بەرسڤا خەلەتا قوتابی، پرتەقالی بەرسڤا دروست.',
     perPage: 'ژمارا پەڕان د پەڕەکێ دا', printHintT: 'بێ مەزنکرن و بچووککرن (100%) چاپ بکە. ئەگەر زێدەتر ژ پەڕەکێ د پەڕەکێ دا چاپ بکەی، ل سەر هێلێن پچڕپچڕ ببڕە و هەر ئێکێ ب تنێ سکان بکە.',
     tplPrintable: 'وێنەیێ مۆدێلێ پاقژە (فایلا دیزاینێ یان سکانەر) — دشێت ژ بەرنامەی چاپ ببیت',
+    section: 'هوبە', secCount: 'ژمارا هوبەیان', secStyle: 'ناڤکرنا هوبەیان', allSecs: 'هەمی هوبە', allSecsExam: 'هەمی هوبە (تاقیکرنا ئێکگرتی)', addSec: 'هوبە', secName: 'ناڤێ هوبێ', renameSec: 'گوهۆڕینا ناڤی', delSec: 'ژێبرنا هوبێ',
+    delSecConfirm: 'هوبا «{s}» دگەل قوتابیێن وێ ({n}) ژێببەی؟', lastSec: 'نەشێی تاکە هوبێ ژێببەی', classNamePh: 'نموونە: پۆلا دوازدێ زانستی', secsN: '{n} هوبە', studentsN: '{n} قوتابی', noStudents: 'هێشتا چ قوتابی د ڤێ هوبێ دا نینن.',
+    importXlsx: 'هاوردەکرنا ناڤان ژ Excel', pasteList: 'یان لیستەکا ناڤان لێبدە', importTitle: 'هاوردەکرنا قوتابیان', sheet: 'پەڕ', hasHeader: 'ڕیزا ئێکێ ناڤونیشانێن ستوونانە', colName: 'ستوونا ناڤی', colId: 'ستوونا ژمارێ', colSec: 'ستوونا هوبێ',
+    autoNum: '— ژمارەکرنا خۆکار —', noCol: '— نینە —', targetSec: 'زێدەکرن بۆ هوبا', preview: 'پێشبینین', importBtn: 'هاوردەکرنا {n} قوتابیان', imported: '{n} قوتابی هاتنە زێدەکرن', idFixed: '{n} ژمارێن دووبارە ژمارێن نوو وەرگرتن',
+    xlsErr: 'نەشیا فایلێ بخوینیت. ب شێوەیێ .xlsx یان .csv پاشەکەفت بکە و دووبارە هەول بدە.', xlsOld: 'فایلێن .xls یێن کەڤن پشتگیری ناکرن — د Excel دا ڤەکە و «Save As» ← «Excel Workbook (.xlsx)» هەلبژێرە.', xlsEmpty: 'فایل ڤالایە.',
     appName: 'ڕاستکەر', appSub: 'ڕاستکرنا تاقیکرنان ب کامێرێ — بێ ئینتەرنێت کار دکەت',
     tabExams: 'تاقیکرن', tabClasses: 'پۆل', tabSettings: 'ڕێکخستن',
     newExam: 'تاقیکرنەکا نوو', newClass: 'پۆلەکێ نوو', noExams: 'هێشتا چ تاقیکرن نینن. تاقیکرنا خۆ یا ئێکێ دروست بکە.', noClasses: 'هێشتا چ پۆل نینن.',
@@ -1024,7 +1051,7 @@ const I18N = {
     q: 'پ', pCorrect: 'ڕێژەیا بەرسڤا دروست', disc: 'هاوکۆلکەیا جیاکرنێ', dist: 'دابەشبوونا بەرسڤان', note: 'تێبینی',
     nVeryHard: 'گەلەک ب زەحمەت', nVeryEasy: 'گەلەک ب سانەهی', nNegDisc: 'جیاکرنا نێگەتیڤ — کلیلێ بپشکنە', nLowDisc: 'جیاکرنا لاواز', nGood: 'باشە',
     analysisHelp: 'هاوکۆلکەیا جیاکرنێ = ڕێژەیا دروست د 27%یا بلندترین دا کێمی 27%یا نزمترین. ژ 0.3 زێدەتر نایابە، ژ 0.2 کێمتر لاوازە، و نێگەتیڤ ب گشتی خەلەتیەکە د کلیلێ یان پسیارێ دا.',
-    classesHelp: 'قوتابیان زێدە بکە ب لێدانا لیستەکێ: هەر دێڕەک «ژمارە ← ناڤ» یان تنێ ناڤ (ب خۆکاری ژمارە دبیت). ژمارە ژ 1 تا 9999.',
+    classesHelp: 'هەر پۆلەکێ هوبە هەنە. قوتابیان زێدە بکە ب هاوردەکرنا فایلەکا Excel (ستوونەک بۆ ناڤان، و ب دلێ خۆ ستوونەک بۆ ژمارە و ستوونەک بۆ هوبێ)، یان ب لێدانا لیستەکێ. ژمارێن قوتابیان د پۆلێ دا دووبارە نابن.',
     className: 'ناڤێ پۆلێ', students: 'قوتابی', pasteStudents: 'لێدانا لیستا قوتابیان', idTaken: 'ژمارە یا هاتییە بکارئینان',
     settings: 'ڕێکخستن', lang: 'زمانێ ڕووکاری', labels: 'هێمایێن هەلبژارتنان', digits: 'شێوەیێ ژمارەیان ل سەر پەڕێ', backup: 'کۆپیا پاراستنێ',
     exportJson: 'دەرئێخستنا کۆپیا پاراستنێ', importJson: 'هاوردەکرنا کۆپیا پاراستنێ', importOk: 'هاوردە بوو', clearAll: 'ژێبرنا هەمی داتایان',
@@ -1083,6 +1110,97 @@ const XLSX = (() => {
   return { build };
 })();
 
+// ===== Minimal .xlsx / .csv reader (offline, no libraries) =====
+const XLSREAD = (() => {
+  const td = new TextDecoder();
+  async function unzip(buf) {
+    const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+    let eocd = -1;
+    for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65558); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) throw new Error('zip');
+    const n = dv.getUint16(eocd + 10, true); let off = dv.getUint32(eocd + 16, true);
+    const files = {};
+    for (let k = 0; k < n; k++) {
+      if (dv.getUint32(off, true) !== 0x02014b50) break;
+      const method = dv.getUint16(off + 10, true), csize = dv.getUint32(off + 20, true), nl = dv.getUint16(off + 28, true), el = dv.getUint16(off + 30, true), cl = dv.getUint16(off + 32, true), lho = dv.getUint32(off + 42, true);
+      files[td.decode(buf.subarray(off + 46, off + 46 + nl))] = { method, csize, lho };
+      off += 46 + nl + el + cl;
+    }
+    return async name => {
+      const f = files[name]; if (!f) return null;
+      const ln = dv.getUint16(f.lho + 26, true), le = dv.getUint16(f.lho + 28, true), st = f.lho + 30 + ln + le;
+      const data = buf.subarray(st, st + f.csize);
+      if (f.method === 0) return td.decode(data);
+      const out = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+      return td.decode(out);
+    };
+  }
+  const xml = s => new DOMParser().parseFromString(s, 'application/xml');
+  const colIdx = ref => { let n = 0; for (const ch of ref.replace(/\d+/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  // -> { sheets: [{name, rows: [[string]]}] }
+  async function readXlsx(buf) {
+    const get = await unzip(buf);
+    const ssXml = await get('xl/sharedStrings.xml');
+    const ss = ssXml ? [...xml(ssXml).getElementsByTagName('si')].map(si => [...si.getElementsByTagName('t')].map(t => t.textContent).join('')) : [];
+    const wb = xml(await get('xl/workbook.xml')), relsXml = await get('xl/_rels/workbook.xml.rels');
+    const rels = {};
+    if (relsXml) for (const r of xml(relsXml).getElementsByTagName('Relationship')) rels[r.getAttribute('Id')] = r.getAttribute('Target');
+    const sheets = [];
+    let i = 0;
+    for (const sh of wb.getElementsByTagName('sheet')) {
+      i++;
+      const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+      let target = rels[rid] || `worksheets/sheet${i}.xml`;
+      target = target.replace(/^\//, '').replace(/^xl\//, '');
+      const sx = await get('xl/' + target); if (!sx) continue;
+      const rows = [];
+      for (const row of xml(sx).getElementsByTagName('row')) {
+        const r = [], rn = +row.getAttribute('r') - 1;
+        for (const c of row.getElementsByTagName('c')) {
+          const ref = c.getAttribute('r'), tp = c.getAttribute('t'), v = c.getElementsByTagName('v')[0];
+          let val = '';
+          if (tp === 's') val = ss[+(v && v.textContent)] ?? '';
+          else if (tp === 'inlineStr') val = [...c.getElementsByTagName('t')].map(t => t.textContent).join('');
+          else if (v) val = v.textContent;
+          if (/^-?\d+\.0+$/.test(val)) val = val.replace(/\.0+$/, '');
+          r[ref ? colIdx(ref) : r.length] = val.trim();
+        }
+        rows[isNaN(rn) ? rows.length : rn] = r;
+      }
+      sheets.push({ name: sh.getAttribute('name') || ('Sheet' + i), rows: dense(rows) });
+    }
+    return { sheets };
+  }
+  function dense(rows) {
+    const out = rows.filter(r => r && r.some(v => v != null && v !== ''));
+    const w = Math.max(0, ...out.map(r => r.length));
+    return out.map(r => Array.from({ length: w }, (_, i) => r[i] == null ? '' : String(r[i])));
+  }
+  function readCsv(text) {
+    text = text.replace(/^﻿/, '');
+    const first = text.split(/\r?\n/)[0] || '';
+    const delim = [',', ';', '\t'].map(d => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+    const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === delim) { row.push(cur.trim()); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur.trim()); rows.push(row); row = []; cur = ''; }
+      else cur += ch;
+    }
+    if (cur || row.length) { row.push(cur.trim()); rows.push(row); }
+    return { sheets: [{ name: 'CSV', rows: dense(rows) }] };
+  }
+  async function read(file) {
+    const name = (file.name || '').toLowerCase(), buf = new Uint8Array(await file.arrayBuffer());
+    if (name.endsWith('.csv') || name.endsWith('.txt')) return readCsv(td.decode(buf));
+    if (buf[0] === 0xD0 && buf[1] === 0xCF) { const e = new Error('xls'); e.code = 'xls'; throw e; }
+    return readXlsx(buf);
+  }
+  return { read, readCsv };
+})();
+
 // ===== Musahhih app =====
 (() => {
   const KEY = 'musahhih.v1';
@@ -1101,6 +1219,7 @@ const XLSX = (() => {
     db.settings = Object.assign({ lang: 'ar', labels: 'ar', digits: 'ar' }, db.settings);
     db.classes ||= []; db.exams ||= []; db.papers ||= {}; db.templates ||= [];
     db.settings.removedPresets ||= [];
+    db.classes.forEach(c => normClass(c));
     for (const pr of PRESETS) if (!db.templates.some(x => x.id === pr.id) && !db.settings.removedPresets.includes(pr.id)) db.templates.unshift(JSON.parse(JSON.stringify(pr)));
   }
   function persist() {
@@ -1115,8 +1234,23 @@ const XLSX = (() => {
   const fmt = (v, d = 1) => N((Math.round(v * 10 ** d) / 10 ** d).toString());
   const pc = (v, d = 0) => fmt(v, d) + (db.settings.digits === 'ar' ? '٪' : '%');
   const examById = id => db.exams.find(e => e.id === id);
-  const classById = id => db.classes.find(c => c.id === id);
+  function normClass(c) {
+    if (!Array.isArray(c.sections) || !c.sections.length) c.sections = [{ id: 's' + c.id, name: 'أ' }];
+    c.students ||= [];
+    for (const st of c.students) if (!c.sections.some(x => x.id === st.sec)) st.sec = c.sections[0].id;
+    return c;
+  }
+  const classById = id => { const c = db.classes.find(c => c.id === id); return c ? normClass(c) : c; };
   const papersOf = id => (db.papers[id] ||= []);
+  const secOf = (c, id) => c && c.sections.find(s => s.id === id);
+  const examStudents = ex => { const c = classById(ex.classId); if (!c) return []; return ex.secId ? c.students.filter(s => s.sec === ex.secId) : c.students; };
+  const multiSec = ex => { const c = classById(ex.classId); return !!c && !ex.secId && c.sections.length > 1; };
+  const studentSec = (ex, sid) => { const c = classById(ex.classId); const st = c && c.students.find(s => String(s.id) === String(sid)); return st ? st.sec : null; };
+  function examClassLabel(ex, all = true) {
+    const c = classById(ex.classId); if (!c) return '';
+    if (ex.secId && secOf(c, ex.secId)) return c.name + ' / ' + secOf(c, ex.secId).name;
+    return c.name + (all && c.sections.length > 1 ? ' — ' + t('allSecs') : '');
+  }
   const tplById = id => db.templates.find(x => x.id === id);
   const isTpl = ex => typeof ex.fmt === 'string' && ex.fmt.startsWith('tpl:');
   const tplOf = ex => isTpl(ex) ? tplById(ex.fmt.slice(4)) : null;
@@ -1290,7 +1424,7 @@ const XLSX = (() => {
     el.innerHTML = `<div class="bar"><h2>${esc(t('tabExams'))}</h2><button class="btn primary" id="new">+ ${esc(t('newExam'))}</button></div>
       ${list.length ? `<div class="cards">${list.map(x => {
         const c = classById(x.classId), n = papersOf(x.id).length;
-        return `<button class="card exam" data-id="${x.id}"><b>${esc(x.title)}</b><span>${c ? esc(c.name) + ' · ' : ''}${N(x.nQ)} ${esc(t('questions'))} · ${N(n)} ${esc(t('papers'))}</span></button>`;
+        return `<button class="card exam" data-id="${x.id}"><b>${esc(x.title)}</b><span>${c ? esc(examClassLabel(x)) + '، ' : ''}${N(x.nQ)} ${esc(t('questions'))}، ${N(n)} ${esc(t('papers'))}</span></button>`;
       }).join('')}</div>` : `<div class="empty">${esc(t('noExams'))}</div>`}`;
     $('#new', el).onclick = () => go('examEdit', { id: null });
     el.querySelectorAll('.exam').forEach(b => b.onclick = () => go('exam', { id: b.dataset.id }));
@@ -1306,6 +1440,7 @@ const XLSX = (() => {
         <label class="wide">${esc(t('title'))}<input id="f-title" value="${esc(d.title)}" required></label>
         <label class="wide">${esc(t('subtitle'))}<input id="f-sub" value="${esc(d.subtitle)}"></label>
         <label>${esc(t('klass'))}<select id="f-class"><option value="">${esc(t('noClass'))}</option>${db.classes.map(c => `<option value="${c.id}" ${c.id === d.classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+        <label>${esc(t('section'))}<select id="f-sec"></select></label>
         <label class="wide">${esc(t('fmt'))}<select id="f-fmt"><option value="quarter" ${d.fmt === 'quarter' ? 'selected' : ''}>${esc(t('fmtQuarter'))}</option><option value="full" ${d.fmt === 'full' || !d.fmt ? 'selected' : ''}>${esc(t('fmtFull'))}</option>${db.templates.map(tp => `<option value="tpl:${tp.id}" ${d.fmt === 'tpl:' + tp.id ? 'selected' : ''}>${esc(t('tplPrefix'))}: ${esc(tp.name)} (${N(tplQ(tp))} ${esc(t('questions'))})</option>`).join('')}</select></label>
         <label>${esc(t('nQ'))}<input id="f-nq" type="number" min="1" max="100" value="${d.nQ}"></label>
         <label>${esc(t('nChoices'))}<select id="f-nc">${[2, 3, 4, 5].map(n => `<option ${n === d.nChoices ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
@@ -1318,7 +1453,7 @@ const XLSX = (() => {
         <div id="keygrid" class="keygrid"></div><div id="mapbox"></div></div>
       <div class="actions"><button class="btn primary" id="save">${esc(t('save'))}</button>${ex ? `<button class="btn danger" id="del">${esc(t('del'))}</button>` : ''}</div>`;
     const read = () => {
-      d.title = $('#f-title').value.trim(); d.subtitle = $('#f-sub').value.trim(); d.classId = $('#f-class').value;
+      d.title = $('#f-title').value.trim(); d.subtitle = $('#f-sub').value.trim(); d.classId = $('#f-class').value; d.secId = $('#f-sec').value;
       d.fmt = $('#f-fmt').value;
       const tp = d.fmt.startsWith('tpl:') ? tplById(d.fmt.slice(4)) : null;
       const maxQ = tp ? tplQ(tp) : d.fmt === 'quarter' ? OMR.QMAX : 100;
@@ -1363,6 +1498,12 @@ const XLSX = (() => {
       if (i >= 0) db.exams[i] = d; else db.exams.push(d);
       persist(); return true;
     };
+    const fillSec = () => {
+      const c = classById($('#f-class').value), sel = $('#f-sec');
+      sel.innerHTML = c ? `<option value="">${esc(c.sections.length > 1 ? t('allSecsExam') : t('allSecs'))}</option>` + c.sections.map(x => `<option value="${x.id}" ${x.id === d.secId ? 'selected' : ''}>${esc(x.name)}</option>`).join('') : `<option value="">—</option>`;
+      sel.disabled = !c;
+    };
+    fillSec(); $('#f-class').addEventListener('change', () => { d.secId = ''; fillSec(); });
     ['#f-fmt', '#f-nq', '#f-nc', '#f-nv'].forEach(s => $(s).addEventListener('change', () => { readMap(); drawKey(); }));
     $('#mapbox').addEventListener('focusout', e => { if (e.target.id === 'f-map') readMap(); });
     $('#vtabs').addEventListener('click', () => { }, true);
@@ -1381,7 +1522,7 @@ const XLSX = (() => {
     const g = papers.map(p => grade(ex, p)), s = stats(g.map(x => x.pct));
     const missing = [...Array(ex.nVersions).keys()].reduce((m, v) => m + [...Array(ex.nQ).keys()].filter(i => !((ex.keys[v] || [])[i] >= 0)).length, 0);
     el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><h2>${esc(ex.title)}</h2><button class="btn ghost" id="edit">✎ ${esc(t('edit'))}</button></div>
-      <div class="meta">${c ? `<span>${esc(c.name)}</span>` : ''}<span>${N(ex.nQ)} ${esc(t('questions'))}</span><span>${isTpl(ex) ? esc(t('tplPrefix') + ': ' + (tplOf(ex)?.name || '?')) : esc(t(ex.fmt === 'quarter' ? 'fmtQuarterShort' : 'fmtFullShort'))}</span><span>${esc(t('nVersions'))}: ${N(ex.nVersions)}</span><span>${esc(t('outOf'))}: ${N(ex.outOf)}</span></div>
+      <div class="meta">${c ? `<span>${esc(examClassLabel(ex))}</span>` : ''}<span>${N(ex.nQ)} ${esc(t('questions'))}</span><span>${isTpl(ex) ? esc(t('tplPrefix') + ': ' + (tplOf(ex)?.name || '?')) : esc(t(ex.fmt === 'quarter' ? 'fmtQuarterShort' : 'fmtFullShort'))}</span><span>${esc(t('nVersions'))}: ${N(ex.nVersions)}</span><span>${esc(t('outOf'))}: ${N(ex.outOf)}</span></div>
       ${missing ? `<div class="alert">${esc(t('keyIncomplete'))}: ${N(missing)}</div>` : ''}
       <div class="big-actions">
         <button class="act" data-go="print"><i>🖨</i>${esc(t('print'))}</button>
@@ -1407,7 +1548,7 @@ const XLSX = (() => {
     const c = classById(ex.classId);
     return Object.assign({
       fmt: ex.fmt, useId: ex.useId !== false, title: ex.title, subtitle: ex.subtitle, nQ: ex.nQ, nChoices: ex.nChoices, nVersions: ex.nVersions,
-      labels: labels(), verLabels: labels(), digitStyle: db.settings.digits, t: I18N[db.settings.lang], className: c ? c.name : '', footer: t('appName'),
+      labels: labels(), verLabels: labels(), digitStyle: db.settings.digits, t: I18N[db.settings.lang], className: extra.student && c && secOf(c, extra.student.sec) ? c.name + ' ' + secOf(c, extra.student.sec).name : examClassLabel(ex, false), footer: t('appName'),
     }, extra);
   }
   function vPrint(el) {
@@ -1421,9 +1562,9 @@ const XLSX = (() => {
     el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><h2>${esc(t('print'))}</h2></div>
       <div class="panel form">
         <label class="radio wide"><input type="radio" name="pm" value="blank" checked> ${esc(t('printBlank'))}</label>
-        <label>${esc(t('copies'))}<input id="p-copies" type="number" min="1" max="300" value="${c ? Math.max(1, c.students.length) : 30}"></label>
+        <label>${esc(t('copies'))}<input id="p-copies" type="number" min="1" max="300" value="${c ? Math.max(1, examStudents(ex).length) : 30}"></label>
         ${ex.nVersions > 1 ? `<label>${esc(t('preVersion'))}<select id="p-ver"><option value="">—</option>${[...Array(ex.nVersions).keys()].map(v => `<option value="${v}">${esc(labels()[v])}</option>`).join('')}<option value="alt">${esc(t('alternate'))}</option></select></label>` : ''}
-        ${c && c.students.length ? `<label class="radio wide"><input type="radio" name="pm" value="students"> ${esc(t('printStudents'))} (${N(c.students.length)})</label>` : ''}
+        ${examStudents(ex).length ? `<label class="radio wide"><input type="radio" name="pm" value="students"> ${esc(t('printStudents'))} (${N(examStudents(ex).length)})</label>` : ''}
       </div>
       <p class="hint">${esc(t(ex.fmt === 'quarter' ? 'printHintQ' : 'printHint'))}</p>
       <div class="actions"><button class="btn primary" id="go">🖨 ${esc(t('printNow'))}</button></div>
@@ -1433,7 +1574,7 @@ const XLSX = (() => {
       const vs = $('#p-ver') ? $('#p-ver').value : '';
       const verFor = i => vs === '' ? null : vs === 'alt' ? i % ex.nVersions : +vs;
       const pages = [];
-      if (mode === 'students') c.students.forEach((s, i) => pages.push(Sheet.svg(sheetOpts(ex, { student: s, version: verFor(i) }))));
+      if (mode === 'students') [...examStudents(ex)].sort((a, b) => (a.sec > b.sec) - (a.sec < b.sec) || a.id - b.id).forEach((s, i) => pages.push(Sheet.svg(sheetOpts(ex, { student: s, version: verFor(i) }))));
       else { const n = Math.max(1, Math.min(300, parseInt($('#p-copies').value) || 1)); for (let i = 0; i < n; i++) pages.push(Sheet.svg(sheetOpts(ex, { version: verFor(i) }))); }
       return pages;
     };
@@ -1451,7 +1592,7 @@ const XLSX = (() => {
     const c = classById(ex.classId);
     el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><h2>${esc(t('print'))}</h2></div>
       <div class="panel form">
-        <label>${esc(t('copies'))}<input id="p-copies" type="number" min="1" max="300" value="${c ? Math.max(1, c.students.length) : 30}"></label>
+        <label>${esc(t('copies'))}<input id="p-copies" type="number" min="1" max="300" value="${c ? Math.max(1, examStudents(ex).length) : 30}"></label>
         <label>${esc(t('perPage'))}<select id="p-per"><option value="1">1 — A4</option><option value="2">2</option><option value="4" selected>4</option></select></label>
       </div>
       <p class="hint">${esc(t('printHintT'))}</p>
@@ -1546,7 +1687,7 @@ const XLSX = (() => {
       if (err) rc.innerHTML = `<b class="bad">${esc(err)}</b>`;
       else rc.innerHTML = `<div class="rc-top"><b>${esc(info.nm)}</b><span class="tag">${esc(info.msg)}</span></div>
         <div class="rc-score">${fmt(g.score)} <small>/ ${N(ex.outOf)}</small></div>
-        <div class="rc-sub">${esc(t('correct'))} ${N(g.correct)} · ${esc(t('wrong'))} ${N(g.wrong)} · ${esc(t('blank'))} ${N(g.blank)}${g.multi ? ' · ' + esc(t('multi')) + ' ' + N(g.multi) : ''}${ex.nVersions > 1 ? ' · ' + esc(t('version')) + ' ' + esc(labels()[info.paper.version]) : ''}</div>
+        <div class="rc-sub">${esc(t('correct'))} ${N(g.correct)}، ${esc(t('wrong'))} ${N(g.wrong)}، ${esc(t('blank'))} ${N(g.blank)}${g.multi ? '، ' + esc(t('multi')) + ' ' + N(g.multi) : ''}${ex.nVersions > 1 ? '، ' + esc(t('version')) + ' ' + esc(labels()[info.paper.version]) : ''}</div>
         ${info.paper.studentId != null && ex.classId && !studentName(ex, info.paper.studentId) ? `<div class="warn">${esc(t('unknownStudent'))}</div>` : ''}
         ${info.paper.weak.length ? `<div class="warn">${esc(t('weak'))}: ${info.paper.weak.map(i => N(i + 1)).join('، ')}</div>` : ''}`;
       $('#frz').hidden = false; frozenUntil = performance.now() + (err ? 1600 : 2200);
@@ -1640,34 +1781,41 @@ const XLSX = (() => {
   }
 
   // ---------- results ----------
-  let sortMode = 'name';
+  let sortMode = 'name', resSec = '';
   function rowsFor(ex) {
     const c = classById(ex.classId), papers = papersOf(ex.id);
     const rows = papers.map(p => ({ p, g: grade(ex, p), name: studentName(ex, p.studentId) || '', id: p.studentId == null ? null : +p.studentId }));
-    const missing = c ? c.students.filter(s => !papers.some(p => String(p.studentId) === String(s.id))) : [];
+    let missing = c ? examStudents(ex).filter(s => !papers.some(p => String(p.studentId) === String(s.id))) : [];
+    if (c) missing.sort((x, y) => c.sections.findIndex(q => q.id === x.sec) - c.sections.findIndex(q => q.id === y.sec) || x.id - y.id);
+    if (multiSec(ex) && resSec && resSecExam === ex.id) { const keep = r => studentSec(ex, r.p.studentId) === resSec; rows.splice(0, rows.length, ...rows.filter(keep)); missing = missing.filter(m => m.sec === resSec); }
     const idk = r => r.id == null ? 1e12 + (r.p.no || 0) : r.id;
-    const cmp = { name: (a, b) => (a.name || '~').localeCompare(b.name || '~', 'ar') || idk(a) - idk(b), score: (a, b) => b.g.pct - a.g.pct, id: (a, b) => idk(a) - idk(b) }[sortMode];
+    const secIdx = r => { if (!multiSec(ex)) return 0; const c2 = classById(ex.classId), sid = studentSec(ex, r.p ? r.p.studentId : r.id); const i = c2.sections.findIndex(x => x.id === sid); return i < 0 ? 999 : i; };
+    const cmp = { name: (a, b) => secIdx(a) - secIdx(b) || (a.name || '~').localeCompare(b.name || '~', 'ar') || idk(a) - idk(b), score: (a, b) => b.g.pct - a.g.pct, id: (a, b) => idk(a) - idk(b) }[sortMode];
     rows.sort(cmp);
     return { rows, missing };
   }
+  let resSecExam = null;
   function vResults(el) {
     const ex = examById(route.id); if (!ex) return go('exams');
+    if (resSecExam !== ex.id) { resSec = ''; resSecExam = ex.id; }
     const { rows, missing } = rowsFor(ex), s = stats(rows.map(r => r.g.pct));
     el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><h2>${esc(t('results'))} — ${esc(ex.title)}</h2></div>
       ${s ? `<div class="statrow">${statCards(ex, s, rows.map(r => r.g))}</div>` : ''}
+      ${multiSec(ex) ? `<div class="secbar">${[['', t('allSecs')], ...classById(ex.classId).sections.map(x => [x.id, x.name])].map(([id, nm]) => `<button class="${resSec === id ? 'on' : ''}" data-rsec="${id}">${esc(nm)}</button>`).join('')}</div>` : ''}
       <div class="bar tools"><div class="seg">${['name', 'score', 'id'].map(m => `<button data-sort="${m}" class="${sortMode === m ? 'on' : ''}">${esc(t('by' + m[0].toUpperCase() + m.slice(1)))}</button>`).join('')}</div>
         <div><button class="btn" id="xl">⬇ ${esc(t('exportXlsx'))}</button> <button class="btn" id="pr">🖨 ${esc(t('printResults'))}</button></div></div>
-      ${rows.length || missing.length ? `<div class="tablewrap"><table class="tbl" id="restbl"><thead><tr><th>${esc(t('id'))}</th><th>${esc(t('name'))}</th>${ex.nVersions > 1 ? `<th>${esc(t('version'))}</th>` : ''}<th>${esc(t('correct'))}</th><th>${esc(t('score'))}</th><th>${esc(t('pct'))}</th></tr></thead><tbody>
-        ${rows.map(r => `<tr data-pid="${r.p.id}" class="click ${r.g.pct < ex.passPct ? 'fail' : ''}"><td>${r.id == null ? '—' : N(r.id)}</td><td>${esc(paperLabel(ex, r.p))}${r.p.edited ? ' ✎' : ''}${r.p.img ? ' <span class="camic">▣</span>' : ''}${r.p.weak && r.p.weak.length || r.p.verUnclear ? ' <span class="dot" title="' + esc(t('weak')) + '">●</span>' : ''}</td>${ex.nVersions > 1 ? `<td>${esc(labels()[r.p.version])}</td>` : ''}<td>${N(r.g.correct)}/${N(r.g.scored)}</td><td><b>${fmt(r.g.score)}</b></td><td>${pc(r.g.pct)}</td></tr>`).join('')}
-        ${missing.map(m => `<tr class="missing"><td>${N(m.id)}</td><td>${esc(m.name)}</td>${ex.nVersions > 1 ? '<td></td>' : ''}<td colspan="3">${esc(t('notScanned'))}</td></tr>`).join('')}
+      ${rows.length || missing.length ? `<div class="tablewrap"><table class="tbl" id="restbl"><thead><tr><th>${esc(t('id'))}</th><th>${esc(t('name'))}</th>${multiSec(ex) ? `<th>${esc(t('section'))}</th>` : ''}${ex.nVersions > 1 ? `<th>${esc(t('version'))}</th>` : ''}<th>${esc(t('correct'))}</th><th>${esc(t('score'))}</th><th>${esc(t('pct'))}</th></tr></thead><tbody>
+        ${rows.map(r => `<tr data-pid="${r.p.id}" class="click ${r.g.pct < ex.passPct ? 'fail' : ''}"><td>${r.id == null ? '—' : N(r.id)}</td><td>${esc(paperLabel(ex, r.p))}${r.p.edited ? ' ✎' : ''}${r.p.img ? ' <span class="camic">▣</span>' : ''}${r.p.weak && r.p.weak.length || r.p.verUnclear ? ' <span class="dot" title="' + esc(t('weak')) + '">●</span>' : ''}</td>${multiSec(ex) ? `<td>${esc(secOf(classById(ex.classId), studentSec(ex, r.p.studentId))?.name || '')}</td>` : ''}${ex.nVersions > 1 ? `<td>${esc(labels()[r.p.version])}</td>` : ''}<td>${N(r.g.correct)}/${N(r.g.scored)}</td><td><b>${fmt(r.g.score)}</b></td><td>${pc(r.g.pct)}</td></tr>`).join('')}
+        ${missing.map(m => `<tr class="missing"><td>${N(m.id)}</td><td>${esc(m.name)}</td>${multiSec(ex) ? `<td>${esc(secOf(classById(ex.classId), m.sec)?.name || '')}</td>` : ''}${ex.nVersions > 1 ? '<td></td>' : ''}<td colspan="3">${esc(t('notScanned'))}</td></tr>`).join('')}
       </tbody></table></div>` : `<div class="empty">${esc(t('noPapers'))}</div>`}`;
     $('#back').onclick = () => go('exam', { id: ex.id });
+    el.querySelectorAll('[data-rsec]').forEach(b => b.onclick = () => { resSec = b.dataset.rsec; render(); });
     el.querySelectorAll('[data-sort]').forEach(b => b.onclick = () => { sortMode = b.dataset.sort; render(); });
     el.querySelectorAll('tr[data-pid]').forEach(tr => tr.onclick = () => paperModal(ex, tr.dataset.pid));
     $('#xl').onclick = () => exportXlsx(ex);
     $('#pr').onclick = () => {
       const tbl = $('#restbl');
-      printPages(`<h1>${esc(ex.title)}</h1><p>${esc(ex.subtitle || '')} ${classById(ex.classId) ? '— ' + esc(classById(ex.classId).name) : ''}</p>${s ? `<div class="pstats">${statCards(ex, s, rows.map(r => r.g))}</div>` : ''}${tbl ? tbl.outerHTML : ''}`, 'doc');
+      printPages(`<h1>${esc(ex.title)}</h1><p>${esc(ex.subtitle || '')} ${classById(ex.classId) ? '— ' + esc(resSec ? classById(ex.classId).name + ' / ' + (secOf(classById(ex.classId), resSec)?.name || '') : examClassLabel(ex)) : ''}</p>${s ? `<div class="pstats">${statCards(ex, s, rows.map(r => r.g))}</div>` : ''}${tbl ? tbl.outerHTML : ''}`, 'doc');
     };
   }
   function paperModal(ex, pid) {
@@ -1676,7 +1824,7 @@ const XLSX = (() => {
     const ansTxt = a => a === -1 ? '—' : a === -2 ? '✱' : L[a];
     const cls = classById(ex.classId);
     modal(`<div class="bar"><h3>${esc(t('paper'))}: ${esc(paperLabel(ex, p))}</h3><button class="btn ghost" data-x>✕</button></div>
-      <div class="meta">${cls && cls.students.length ? `<span>${esc(t('name'))}: <select id="m-id">${`<option value="">${esc(t('unassigned'))}</option>` + cls.students.map(s => `<option value="${s.id}" ${String(s.id) === String(p.studentId) ? 'selected' : ''}>${esc(s.name)} (${N(s.id)})</option>`).join('')}${p.studentId != null && !cls.students.some(s => String(s.id) === String(p.studentId)) ? `<option value="${p.studentId}" selected>#${N(p.studentId)}</option>` : ''}</select></span>` : `<span>${esc(t('id'))}: <input id="m-id" type="number" min="1" max="99999999" value="${p.studentId ?? ''}" class="mini"></span>`}
+      <div class="meta">${cls && examStudents(ex).length ? `<span>${esc(t('name'))}: <select id="m-id">${`<option value="">${esc(t('unassigned'))}</option>` + cls.sections.filter(x => !ex.secId || x.id === ex.secId).map(x => { const ss = examStudents(ex).filter(s => s.sec === x.id); return ss.length ? `<optgroup label="${esc(t('section'))} ${esc(x.name)}">${ss.map(s => `<option value="${s.id}" ${String(s.id) === String(p.studentId) ? 'selected' : ''}>${esc(s.name)} (${N(s.id)})</option>`).join('')}</optgroup>` : ''; }).join('')}${p.studentId != null && !cls.students.some(s => String(s.id) === String(p.studentId)) ? `<option value="${p.studentId}" selected>#${N(p.studentId)}</option>` : ''}</select></span>` : `<span>${esc(t('id'))}: <input id="m-id" type="number" min="1" max="99999999" value="${p.studentId ?? ''}" class="mini"></span>`}
       ${ex.nVersions > 1 ? `<span>${esc(t('version'))}: <select id="m-ver">${[...Array(ex.nVersions).keys()].map(v => `<option value="${v}" ${v === p.version ? 'selected' : ''}>${esc(L[v])}</option>`).join('')}</select></span>` : ''}
       <span><b>${fmt(g.score)}</b> / ${N(ex.outOf)}</span>${p.edited ? `<span>${esc(t('edited'))}</span>` : ''}</div>
       ${p.verUnclear ? `<div class="alert">${esc(t('version'))}: ${esc(t('weak'))}</div>` : ''}
@@ -1743,15 +1891,16 @@ const XLSX = (() => {
   function exportXlsx(ex) {
     const L = labels(), { rows } = rowsFor(ex), A = itemAnalysis(ex), s = stats(rows.map(r => r.g.pct));
     const ansTxt = a => a === -1 ? '' : a === -2 ? '*' : L[a];
-    const head = [t('id'), t('name')].concat(ex.nVersions > 1 ? [t('version')] : [], [t('correct'), t('wrong'), t('blank'), t('score') + ' / ' + ex.outOf, t('pct')], [...Array(ex.nQ).keys()].map(i => t('q') + (i + 1)));
-    const res = [head].concat(rows.map(r => [r.id == null ? '' : r.id, paperLabel(ex, r.p)].concat(ex.nVersions > 1 ? [L[r.p.version]] : [], [r.g.correct, r.g.wrong, r.g.blank + r.g.multi, Math.round(r.g.score * 100) / 100, Math.round(r.g.pct * 10) / 10], r.p.answers.map(ansTxt))));
-    for (let v = 0; v < ex.nVersions; v++) res.push([null, t('theKey') + (ex.nVersions > 1 ? ' ' + L[v] : '')].concat(ex.nVersions > 1 ? [L[v]] : [], [null, null, null, null, null], (ex.keys[v] || []).slice(0, ex.nQ).map(k => k >= 0 ? L[k] : '')));
+    const ms = multiSec(ex), secCol = r => ms ? [secOf(classById(ex.classId), studentSec(ex, r.p.studentId))?.name || ''] : [];
+    const head = [t('id'), t('name')].concat(ms ? [t('section')] : [], ex.nVersions > 1 ? [t('version')] : [], [t('correct'), t('wrong'), t('blank'), t('score') + ' / ' + ex.outOf, t('pct')], [...Array(ex.nQ).keys()].map(i => t('q') + (i + 1)));
+    const res = [head].concat(rows.map(r => [r.id == null ? '' : r.id, paperLabel(ex, r.p)].concat(secCol(r), ex.nVersions > 1 ? [L[r.p.version]] : [], [r.g.correct, r.g.wrong, r.g.blank + r.g.multi, Math.round(r.g.score * 100) / 100, Math.round(r.g.pct * 10) / 10], r.p.answers.map(ansTxt))));
+    for (let v = 0; v < ex.nVersions; v++) res.push([null, t('theKey') + (ex.nVersions > 1 ? ' ' + L[v] : '')].concat(ms ? [''] : [], ex.nVersions > 1 ? [L[v]] : [], [null, null, null, null, null], (ex.keys[v] || []).slice(0, ex.nQ).map(k => k >= 0 ? L[k] : '')));
     const ana = [[t('q'), t('theKey'), t('pCorrect') + ' %', t('disc')].concat(L.slice(0, ex.nChoices), [t('blank'), t('multi'), t('note')])]
       .concat(A.items.map(it => [it.q + 1, it.key >= 0 ? L[it.key] : '', it.p == null ? null : Math.round(it.p * 1000) / 10, it.D == null ? null : Math.round(it.D * 100) / 100].concat(it.dist, [it.blank, it.multi, it.note ? t(it.note) : ''])));
     const k = ex.outOf / 100;
     const st = [[t('stats'), '']].concat(s ? [[t('count'), s.n], [t('mean'), +(s.mean * k).toFixed(2)], [t('median'), +(s.median * k).toFixed(2)], [t('max'), +(s.max * k).toFixed(2)], [t('min'), +(s.min * k).toFixed(2)], [t('sd'), +(s.sd * k).toFixed(2)], [t('passed'), rows.filter(r => r.g.pct >= ex.passPct).length]] : []);
     const blob = XLSX.build([
-      { name: t('sheetResults'), rows: res, widths: [8, 26].concat(ex.nVersions > 1 ? [8] : [], [8, 8, 8, 12, 9], Array(ex.nQ).fill(5)) },
+      { name: t('sheetResults'), rows: res, widths: [8, 26].concat(ms ? [8] : [], ex.nVersions > 1 ? [8] : [], [8, 8, 8, 12, 9], Array(ex.nQ).fill(5)) },
       { name: t('sheetAnalysis'), rows: ana, widths: [6, 7, 14, 10].concat(Array(ex.nChoices).fill(7), [7, 7, 30]) },
       { name: t('sheetStats'), rows: st, widths: [22, 14] },
     ]);
@@ -1759,52 +1908,185 @@ const XLSX = (() => {
   }
 
   // ---------- classes ----------
+  // ---------- classes with sections ----------
+  const SEC_STYLES = { ar: ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي', 'ك', 'ل'], en: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'], num: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] };
+  const toWestern = s => String(s ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+  let secSel = '';
   function vClasses(el) {
     el.innerHTML = `<div class="bar"><h2>${esc(t('tabClasses'))}</h2><button class="btn primary" id="new">+ ${esc(t('newClass'))}</button></div>
-      ${db.classes.length ? `<div class="cards">${db.classes.map(c => `<button class="card cls" data-id="${c.id}"><b>${esc(c.name)}</b><span>${N(c.students.length)} ${esc(t('students'))}</span></button>`).join('')}</div>` : `<div class="empty">${esc(t('noClasses'))}</div>`}`;
-    $('#new', el).onclick = () => { const c = { id: uid(), name: t('klass') + ' ' + (db.classes.length + 1), students: [] }; db.classes.push(c); persist(); go('class', { id: c.id }); };
-    el.querySelectorAll('.cls').forEach(b => b.onclick = () => go('class', { id: b.dataset.id }));
+      ${db.classes.length ? `<div class="cards">${db.classes.map(c => `<button class="card cls" data-id="${c.id}"><b>${esc(c.name)}</b><span>${esc(tf('secsN', { n: N(c.sections.length) }))}، ${esc(tf('studentsN', { n: N(c.students.length) }))}</span><span class="secline">${c.sections.map(s => esc(s.name)).join('، ')}</span></button>`).join('')}</div>` : `<div class="empty">${esc(t('noClasses'))}</div>`}`;
+    $('#new', el).onclick = () => newClassModal();
+    el.querySelectorAll('.cls').forEach(b => b.onclick = () => { secSel = ''; go('class', { id: b.dataset.id }); });
+  }
+  function newClassModal() {
+    modal(`<div class="bar"><h3>${esc(t('newClass'))}</h3><button class="btn ghost" data-x>✕</button></div>
+      <div class="form">
+        <label class="wide">${esc(t('className'))}<input id="nc-name" placeholder="${esc(t('classNamePh'))}"></label>
+        <label>${esc(t('secCount'))}<select id="nc-n">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => `<option ${n === 3 ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+        <label>${esc(t('secStyle'))}<select id="nc-st"><option value="ar">أ، ب، ج…</option><option value="en">A, B, C…</option><option value="num">1، 2، 3…</option></select></label>
+      </div>
+      <div class="secpreview" id="nc-pv"></div>
+      <div class="actions"><button class="btn primary" data-ok>${esc(t('save'))}</button></div>`, (m, close) => {
+      const pv = () => { const n = +m.querySelector('#nc-n').value, st = SEC_STYLES[m.querySelector('#nc-st').value]; m.querySelector('#nc-pv').innerHTML = st.slice(0, n).map(s => `<span>${esc(s)}</span>`).join(''); };
+      m.querySelector('#nc-n').onchange = m.querySelector('#nc-st').onchange = pv; pv();
+      m.querySelector('[data-x]').onclick = close;
+      setTimeout(() => m.querySelector('#nc-name').focus(), 50);
+      m.querySelector('[data-ok]').onclick = () => {
+        const name = m.querySelector('#nc-name').value.trim() || (t('klass') + ' ' + (db.classes.length + 1));
+        const n = +m.querySelector('#nc-n').value, st = SEC_STYLES[m.querySelector('#nc-st').value];
+        const c = { id: uid(), name, sections: st.slice(0, n).map(s => ({ id: uid(), name: s })), students: [] };
+        db.classes.push(c); persist(); close(); secSel = ''; go('class', { id: c.id });
+      };
+    });
+  }
+  function addStudents(c, list, secId) { // list: [{id?, name, sec?(name)}] -> {added, fixed, newSecs}
+    let next = c.students.reduce((m, s) => Math.max(m, s.id), 0) + 1, added = 0, fixed = 0, newSecs = 0;
+    for (const it of list) {
+      const name = String(it.name || '').trim(); if (!name) continue;
+      let sec = secId;
+      if (it.sec != null && String(it.sec).trim() !== '') {
+        const sn = String(it.sec).trim();
+        let s = c.sections.find(x => x.name === sn || toWestern(x.name) === toWestern(sn));
+        if (!s) { s = { id: uid(), name: sn }; c.sections.push(s); newSecs++; }
+        sec = s.id;
+      }
+      let id = parseInt(toWestern(it.id));
+      if (!(id >= 1 && id <= 99999999) || c.students.some(s => s.id === id)) { if (id >= 1) fixed++; while (c.students.some(s => s.id === next)) next++; id = next++; }
+      c.students.push({ id, name, sec: sec || c.sections[0].id }); added++;
+    }
+    return { added, fixed, newSecs };
   }
   function vClass(el) {
     const c = classById(route.id); if (!c) return go('classes');
+    if (secSel && !c.sections.some(s => s.id === secSel)) secSel = '';
     c.students.sort((a, b) => a.id - b.id);
+    const shown = secSel ? c.students.filter(s => s.sec === secSel) : c.students;
+    const cnt = id => c.students.filter(s => s.sec === id).length;
+    const cur = c.sections.find(s => s.id === secSel);
     el.innerHTML = `<div class="bar"><button class="btn ghost" id="back">→ ${esc(t('back'))}</button><input id="cname" class="title-input" value="${esc(c.name)}"></div>
       <p class="hint">${esc(t('classesHelp'))}</p>
-      <div class="panel"><textarea id="paste" rows="5" placeholder="1	Ahmed&#10;2	Sara&#10;…"></textarea><div class="actions"><button class="btn primary" id="add">+ ${esc(t('add'))}</button></div></div>
-      <div class="tablewrap"><table class="tbl"><thead><tr><th>${esc(t('id'))}</th><th>${esc(t('name'))}</th><th></th></tr></thead><tbody>
-      ${c.students.map((s, i) => `<tr><td><input class="mini" type="number" min="1" max="99999999" data-i="${i}" data-f="id" value="${s.id}"></td><td><input data-i="${i}" data-f="name" value="${esc(s.name)}"></td><td><button class="btn ghost sm" data-del="${i}">✕</button></td></tr>`).join('')}
-      </tbody></table></div>
+      <div class="secbar"><button class="${secSel ? '' : 'on'}" data-sec="">${esc(t('allSecs'))} <small>${N(c.students.length)}</small></button>
+        ${c.sections.map(s => `<button class="${s.id === secSel ? 'on' : ''}" data-sec="${s.id}">${esc(s.name)} <small>${N(cnt(s.id))}</small></button>`).join('')}
+        <button class="add" id="addsec">+ ${esc(t('addSec'))}</button></div>
+      ${cur ? `<div class="secacts"><button class="btn sm" id="rensec">✎ ${esc(t('renameSec'))}</button><button class="btn sm danger" id="delsec">${esc(t('delSec'))}</button></div>` : ''}
+      <div class="panel imp">
+        <label class="btn primary">📥 ${esc(t('importXlsx'))}<input type="file" id="xls" accept=".xlsx,.xlsm,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden></label>
+        <details><summary>${esc(t('pasteList'))}</summary>
+          <textarea id="paste" rows="5" placeholder="1	Ahmed&#10;2	Sara&#10;…"></textarea>
+          <div class="actions"><select id="paste-sec" class="sel-sm">${c.sections.map(s => `<option value="${s.id}" ${s.id === (secSel || c.sections[0].id) ? 'selected' : ''}>${esc(t('section'))}: ${esc(s.name)}</option>`).join('')}</select><button class="btn" id="add">+ ${esc(t('add'))}</button></div>
+        </details>
+      </div>
+      <div class="tablewrap"><table class="tbl"><thead><tr><th>${esc(t('id'))}</th><th>${esc(t('name'))}</th><th>${esc(t('section'))}</th><th></th></tr></thead><tbody>
+      ${shown.map(s => { const i = c.students.indexOf(s); return `<tr><td><input class="mini" type="number" min="1" max="99999999" data-i="${i}" data-f="id" value="${s.id}"></td><td><input data-i="${i}" data-f="name" value="${esc(s.name)}"></td><td><select class="sel-sm" data-i="${i}" data-f="sec">${c.sections.map(x => `<option value="${x.id}" ${x.id === s.sec ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></td><td><button class="btn ghost sm" data-del="${i}">✕</button></td></tr>`; }).join('')}
+      </tbody></table>${shown.length ? '' : `<div class="empty slim">${esc(t('noStudents'))}</div>`}</div>
       <div class="actions"><button class="btn danger" id="delc">${esc(t('del'))} — ${esc(c.name)}</button></div>`;
     $('#back').onclick = () => go('classes');
     $('#cname').onchange = e => { c.name = e.target.value.trim() || c.name; persist(); };
+    el.querySelectorAll('[data-sec]').forEach(b => b.onclick = () => { secSel = b.dataset.sec; render(); });
+    $('#addsec').onclick = () => {
+      const used = new Set(c.sections.map(s => s.name)), st = SEC_STYLES[/^[A-Z]$/.test(c.sections[0]?.name || '') ? 'en' : /^\d+$/.test(c.sections[0]?.name || '') ? 'num' : 'ar'];
+      const def = st.find(s => !used.has(s)) || String(c.sections.length + 1);
+      const name = prompt(t('secName'), def); if (!name || !name.trim()) return;
+      const s = { id: uid(), name: name.trim() }; c.sections.push(s); secSel = s.id; persist(); render();
+    };
+    if (cur) {
+      $('#rensec').onclick = () => { const n = prompt(t('secName'), cur.name); if (n && n.trim()) { cur.name = n.trim(); persist(); render(); } };
+      $('#delsec').onclick = () => {
+        if (c.sections.length === 1) return toast(t('lastSec'), 'bad');
+        const n = cnt(cur.id);
+        if (!confirm(tf('delSecConfirm', { s: cur.name, n: N(n) }))) return;
+        c.students = c.students.filter(s => s.sec !== cur.id); c.sections = c.sections.filter(s => s !== cur);
+        db.exams.forEach(e => { if (e.classId === c.id && e.secId === cur.id) e.secId = ''; });
+        secSel = ''; persist(); render();
+      };
+    }
     $('#add').onclick = () => {
-      const lines = $('#paste').value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      let next = c.students.reduce((m, s) => Math.max(m, s.id), 0) + 1, added = 0;
+      const lines = $('#paste').value.split(/\r?\n/).map(l => l.trim()).filter(Boolean), list = [];
       for (const l of lines) {
         const m = l.match(/^([0-9٠-٩]{1,8})\s*[\t,;:.\-–ـ|]*\s*(.+)$/) || l.match(/^(.+?)\s*[\t,;|]\s*([0-9٠-٩]{1,8})$/);
-        let id, name;
-        const toW = s => +String(s).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
-        if (m && /^[0-9٠-٩]+$/.test(m[1])) { id = toW(m[1]); name = m[2]; }
-        else if (m && /^[0-9٠-٩]+$/.test(m[2])) { id = toW(m[2]); name = m[1]; }
-        else { name = l; }
-        if (!id || c.students.some(s => s.id === id)) { while (c.students.some(s => s.id === next)) next++; id = next++; }
-        if (id > 99999999) continue;
-        c.students.push({ id, name: name.trim() }); added++;
+        if (m && /^[0-9٠-٩]+$/.test(m[1])) list.push({ id: m[1], name: m[2] });
+        else if (m && /^[0-9٠-٩]+$/.test(m[2])) list.push({ id: m[2], name: m[1] });
+        else list.push({ name: l });
       }
-      persist(); toast('+' + N(added)); render();
+      const r = addStudents(c, list, $('#paste-sec').value);
+      persist(); toast(tf('imported', { n: N(r.added) }) + (r.fixed ? '، ' + tf('idFixed', { n: N(r.fixed) }) : '')); render();
     };
-    el.querySelectorAll('input[data-i]').forEach(inp => inp.onchange = () => {
+    $('#xls').onchange = async e => {
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try { const wb = await XLSREAD.read(f); importModal(c, wb); }
+      catch (err) { console.error(err); toast(err.code === 'xls' ? t('xlsOld') : t('xlsErr'), 'bad'); }
+    };
+    el.querySelectorAll('[data-i]').forEach(inp => inp.onchange = () => {
       const s = c.students[+inp.dataset.i];
       if (inp.dataset.f === 'id') {
         const v = parseInt(inp.value);
         if (!(v >= 1 && v <= 99999999) || c.students.some(o => o !== s && o.id === v)) { toast(t('idTaken'), 'bad'); inp.value = s.id; return; }
         s.id = v;
-      } else s.name = inp.value.trim();
+      } else if (inp.dataset.f === 'sec') { s.sec = inp.value; persist(); render(); return; }
+      else s.name = inp.value.trim();
       persist();
     });
     el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { c.students.splice(+b.dataset.del, 1); persist(); render(); });
-    $('#delc').onclick = () => { if (confirm(t('confirmDel'))) { db.classes = db.classes.filter(x => x !== c); db.exams.forEach(e => { if (e.classId === c.id) e.classId = ''; }); persist(); go('classes'); } };
+    $('#delc').onclick = () => { if (confirm(t('confirmDel'))) { db.classes = db.classes.filter(x => x !== c); db.exams.forEach(e => { if (e.classId === c.id) { e.classId = ''; e.secId = ''; } }); persist(); go('classes'); } };
   }
+  function guessCols(allRows) {
+    const reName = /اسم|الاسم|ناڤ|ناو|name|student|قوتابی/i;
+    let skip = 0;
+    for (let i = 0; i < Math.min(8, allRows.length); i++) if (allRows[i].some(x => reName.test(String(x)) && String(x).length < 30)) { skip = i; break; }
+    const rows = allRows.slice(skip), h = rows[0] || [], w = h.length;
+    const find = re => h.findIndex(x => re.test(String(x)) && String(x).length < 30);
+    const isNum = v => /^\s*[0-9٠-٩۰-۹]+\s*$/.test(v);
+    const hdrName = find(reName), hdrId = find(/^(ت|م|ر\.?|#)$|رقم|الرقم|تسلسل|ژمار|^id$|^no\.?$|number/i), hdrSec = find(/شعب|الشعبة|هوب|section|group|^class$/i);
+    const header = hdrName >= 0 || (hdrId >= 0 && !isNum(h[hdrId])) || hdrSec >= 0;
+    const body = header ? rows.slice(1) : rows;
+    const score = j => { let txt = 0, num = 0; for (const r of body.slice(0, 40)) { const v = r[j] || ''; if (!v) continue; if (isNum(v)) num++; else if (v.length > 2) txt++; } return { txt, num }; };
+    let name = hdrName, id = hdrId;
+    if (name < 0) { let best = -1, bs = -1; for (let j = 0; j < w; j++) { const s = score(j).txt; if (s > bs) { bs = s; best = j; } } name = best; }
+    if (id < 0 && !header) { for (let j = 0; j < w; j++) { if (j === name) continue; const s = score(j); if (s.num > body.length * 0.6) { id = j; break; } } }
+    return { skip, header, name, id, sec: hdrSec };
+  }
+  function importModal(c, wb) {
+    const sheets = wb.sheets.filter(s => s.rows.length);
+    if (!sheets.length) return toast(t('xlsEmpty'), 'bad');
+    let si = 0, g = guessCols(sheets[0].rows);
+    modal(`<div class="bar"><h3>${esc(t('importTitle'))} — ${esc(c.name)}</h3><button class="btn ghost" data-x>✕</button></div><div id="imp-body"></div>`, (m, close) => {
+      m.querySelector('[data-x]').onclick = close;
+      const draw = () => {
+        const rows = sheets[si].rows.slice(g.skip), w = Math.max(...rows.map(r => r.length)), body = g.header ? rows.slice(1) : rows;
+        const colName = j => `${String.fromCharCode(65 + j)}${g.header && rows[0][j] ? ' — ' + rows[0][j] : ''}`;
+        const opts = (cur, none) => (none ? `<option value="-1" ${cur < 0 ? 'selected' : ''}>${esc(none)}</option>` : '') + [...Array(w).keys()].map(j => `<option value="${j}" ${j === cur ? 'selected' : ''}>${esc(colName(j))}</option>`).join('');
+        const list = body.map(r => ({ name: g.name >= 0 ? r[g.name] : '', id: g.id >= 0 ? r[g.id] : '', sec: g.sec >= 0 ? r[g.sec] : null })).filter(x => x.name && x.name.trim());
+        m.querySelector('#imp-body').innerHTML = `<div class="form">
+          ${sheets.length > 1 ? `<label class="wide">${esc(t('sheet'))}<select id="i-sh">${sheets.map((s, i) => `<option value="${i}" ${i === si ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>` : ''}
+          <label class="radio wide"><input type="checkbox" id="i-hd" ${g.header ? 'checked' : ''}> ${esc(t('hasHeader'))}</label>
+          <label>${esc(t('colName'))}<select id="i-name">${opts(g.name)}</select></label>
+          <label>${esc(t('colId'))}<select id="i-id">${opts(g.id, t('autoNum'))}</select></label>
+          <label>${esc(t('colSec'))}<select id="i-sec">${opts(g.sec, t('noCol'))}</select></label>
+          ${g.sec < 0 ? `<label>${esc(t('targetSec'))}<select id="i-tgt">${c.sections.map(s => `<option value="${s.id}" ${s.id === (secSel || c.sections[0].id) ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>` : ''}
+        </div>
+        <h3 class="imp-h">${esc(t('preview'))}</h3>
+        <div class="tablewrap"><table class="tbl"><thead><tr><th>${esc(t('id'))}</th><th>${esc(t('name'))}</th>${g.sec >= 0 ? `<th>${esc(t('section'))}</th>` : ''}</tr></thead><tbody>
+          ${list.slice(0, 8).map(x => `<tr><td>${x.id ? esc(x.id) : '<small>' + esc(t('autoNum')) + '</small>'}</td><td>${esc(x.name)}</td>${g.sec >= 0 ? `<td>${esc(x.sec || '')}</td>` : ''}</tr>`).join('')}
+          ${list.length > 8 ? `<tr><td colspan="3"><small>… +${N(list.length - 8)}</small></td></tr>` : ''}
+        </tbody></table></div>
+        <div class="actions"><button class="btn primary" id="i-go" ${list.length ? '' : 'disabled'}>📥 ${esc(tf('importBtn', { n: N(list.length) }))}</button></div>`;
+        const q = s => m.querySelector(s);
+        if (q('#i-sh')) q('#i-sh').onchange = e => { si = +e.target.value; g = guessCols(sheets[si].rows); draw(); };
+        q('#i-hd').onchange = e => { g.header = e.target.checked; draw(); };
+        q('#i-name').onchange = e => { g.name = +e.target.value; draw(); };
+        q('#i-id').onchange = e => { g.id = +e.target.value; draw(); };
+        q('#i-sec').onchange = e => { g.sec = +e.target.value; draw(); };
+        q('#i-go').onclick = () => {
+          const r = addStudents(c, list, q('#i-tgt') ? q('#i-tgt').value : null);
+          persist(); close();
+          toast(tf('imported', { n: N(r.added) }) + (r.newSecs ? '، ' + tf('secsN', { n: N(r.newSecs) }) + ' +' : '') + (r.fixed ? '، ' + tf('idFixed', { n: N(r.fixed) }) : ''));
+          render();
+        };
+      };
+      draw();
+    });
+  }
+
 
   // ---------- custom template designer ----------
   function grayFromImg(img) {
@@ -2039,7 +2321,7 @@ const XLSX = (() => {
       </div>
       <div class="panel"><div class="bar"><h3>${esc(t('tplTitle'))}</h3><label class="btn primary">+ ${esc(t('tplAdd'))}<input type="file" id="tpl-new" accept="image/*" hidden></label></div>
         <p class="hint">${esc(t('tplHelp'))}</p>
-        ${db.templates.length ? `<div class="cards">${db.templates.map(tp => `<button class="card tpl" data-id="${tp.id}"><b>${esc(tp.name)}</b><span>${N(tplQ(tp))} ${esc(t('questions'))} · ${N(tp.nC)} ${esc(t('nChoices'))}</span></button>`).join('')}</div>` : `<div class="empty">${esc(t('tplNone'))}</div>`}</div>
+        ${db.templates.length ? `<div class="cards">${db.templates.map(tp => `<button class="card tpl" data-id="${tp.id}"><b>${esc(tp.name)}</b><span>${N(tplQ(tp))} ${esc(t('questions'))}، ${N(tp.nC)} ${esc(t('nChoices'))}</span></button>`).join('')}</div>` : `<div class="empty">${esc(t('tplNone'))}</div>`}</div>
       <div class="panel"><h3>${esc(t('backup'))}</h3><p class="hint">${esc(t('about'))}</p>
         <div class="actions"><button class="btn" id="exp">⬇ ${esc(t('exportJson'))}</button><label class="btn">⬆ ${esc(t('importJson'))}<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="clr">${esc(t('clearAll'))}</button></div></div>`;
     el.querySelectorAll('.tpl').forEach(b => b.onclick = () => go('tplEdit', { id: b.dataset.id }));
